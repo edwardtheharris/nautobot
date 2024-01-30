@@ -25,20 +25,7 @@ from .device_components import (
     PowerPort,
     RearPort,
 )
-from .devices import (
-    Controller,
-    ControllerManagedDeviceGroup,
-    Device,
-    DeviceFamily,
-    DeviceRedundancyGroup,
-    DeviceType,
-    DeviceTypeToSoftwareImageFile,
-    Manufacturer,
-    Platform,
-    SoftwareImageFile,
-    SoftwareVersion,
-    VirtualChassis,
-)
+from .devices import Device, DeviceRedundancyGroup, DeviceType, Manufacturer, Platform, VirtualChassis
 from .locations import Location, LocationType
 from .power import PowerFeed, PowerPanel
 from .racks import Rack, RackGroup, RackReservation
@@ -52,17 +39,13 @@ __all__ = (
     "ConsolePortTemplate",
     "ConsoleServerPort",
     "ConsoleServerPortTemplate",
-    "Controller",
-    "ControllerManagedDeviceGroup",
     "Device",
     "DeviceBay",
     "DeviceBayTemplate",
     "DeviceRedundancyGroup",
     "DeviceType",
-    "DeviceTypeToSoftwareImageFile",
     "FrontPort",
     "FrontPortTemplate",
-    "DeviceFamily",
     "Interface",
     "InterfaceRedundancyGroup",
     "InterfaceRedundancyGroupAssociation",
@@ -84,7 +67,5 @@ __all__ = (
     "RackReservation",
     "RearPort",
     "RearPortTemplate",
-    "SoftwareImageFile",
-    "SoftwareVersion",
     "VirtualChassis",
 )

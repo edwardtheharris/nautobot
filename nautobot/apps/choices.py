@@ -28,9 +28,6 @@ from nautobot.dcim.choices import (
     RackElevationDetailRenderChoices,
     RackTypeChoices,
     RackWidthChoices,
-    SoftwareImageFileHashingAlgorithmChoices,
-    SoftwareImageFileStatusChoices,
-    SoftwareVersionStatusChoices,
     SubdeviceRoleChoices,
 )
 from nautobot.extras.choices import (
@@ -106,9 +103,6 @@ __all__ = (
     "SecretsGroupAccessTypeChoices",
     "SecretsGroupSecretTypeChoices",
     "ServiceProtocolChoices",
-    "SoftwareImageFileHashingAlgorithmChoices",
-    "SoftwareImageFileStatusChoices",
-    "SoftwareVersionStatusChoices",
     "SubdeviceRoleChoices",
     "unpack_grouped_choices",
     "WebhookHttpMethodChoices",

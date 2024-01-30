@@ -182,7 +182,8 @@ class APISelect(SelectWithDisabled):
                     # ModelChoiceIterator.__iter__() yields a tuple of (value, label)
                     # using this approach first yield a tuple of (null(value), null_option(label))
                     yield "null", self.null_options
-                    yield from super().__iter__()
+                    for item in super().__iter__():
+                        yield item
 
             null_option = self.attrs.get("data-null-option")
             self.choices = ModelChoiceIteratorWithNullOption(field=self.choices.field, null_option=null_option)

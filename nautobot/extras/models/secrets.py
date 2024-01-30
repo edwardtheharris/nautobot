@@ -5,7 +5,6 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from jinja2.exceptions import TemplateSyntaxError, UndefinedError
 
-from nautobot.core.constants import CHARFIELD_MAX_LENGTH
 from nautobot.core.models import BaseModel
 from nautobot.core.models.generics import OrganizationalModel, PrimaryModel
 from nautobot.core.utils.data import render_jinja2
@@ -31,9 +30,9 @@ class Secret(PrimaryModel):
     Nautobot models and APIs to make use of as needed and appropriate.
     """
 
-    name = models.CharField(max_length=CHARFIELD_MAX_LENGTH, unique=True)
-    description = models.CharField(max_length=CHARFIELD_MAX_LENGTH, blank=True)
-    provider = models.CharField(max_length=CHARFIELD_MAX_LENGTH)
+    name = models.CharField(max_length=100, unique=True)
+    description = models.CharField(max_length=200, blank=True)
+    provider = models.CharField(max_length=100)
     parameters = models.JSONField(encoder=DjangoJSONEncoder, default=dict)
 
     clone_fields = [
@@ -92,8 +91,8 @@ class Secret(PrimaryModel):
 class SecretsGroup(OrganizationalModel):
     """A group of related Secrets."""
 
-    name = models.CharField(max_length=CHARFIELD_MAX_LENGTH, unique=True)
-    description = models.CharField(max_length=CHARFIELD_MAX_LENGTH, blank=True)
+    name = models.CharField(max_length=100, unique=True)
+    description = models.CharField(max_length=200, blank=True)
     secrets = models.ManyToManyField(
         to=Secret, related_name="secrets_groups", through="extras.SecretsGroupAssociation", blank=True
     )

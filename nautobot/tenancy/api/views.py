@@ -1,3 +1,5 @@
+from rest_framework.routers import APIRootView
+
 from nautobot.circuits.models import Circuit
 from nautobot.core.models.querysets import count_related
 from nautobot.dcim.models import Device, Rack
@@ -8,6 +10,16 @@ from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot.virtualization.models import VirtualMachine
 
 from . import serializers
+
+
+class TenancyRootView(APIRootView):
+    """
+    Tenancy API root view
+    """
+
+    def get_view_name(self):
+        return "Tenancy"
+
 
 #
 # Tenant Groups

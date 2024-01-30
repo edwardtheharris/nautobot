@@ -4,10 +4,8 @@ from nautobot.core.forms import (
     CommentField,
     DynamicModelChoiceField,
     DynamicModelMultipleChoiceField,
-    StaticSelect2,
     TagFilterField,
 )
-from nautobot.core.forms.constants import BOOLEAN_WITH_BLANK_CHOICES
 from nautobot.extras.forms import (
     NautobotBulkEditForm,
     NautobotFilterForm,
@@ -32,13 +30,6 @@ class TenantGroupForm(NautobotModelForm):
             "name",
             "description",
         ]
-
-
-class TenantGroupFilterForm(NautobotFilterForm):
-    model = TenantGroup
-    q = forms.CharField(required=False, label="Search")
-    parent = DynamicModelMultipleChoiceField(queryset=TenantGroup.objects.all(), to_field_name="name", required=False)
-    has_tenants = forms.NullBooleanField(required="False", widget=StaticSelect2(choices=BOOLEAN_WITH_BLANK_CHOICES))
 
 
 #

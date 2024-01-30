@@ -3,7 +3,6 @@ from django.db import models
 from django.db.models import Q
 
 from nautobot.core.choices import ColorChoices
-from nautobot.core.constants import CHARFIELD_MAX_LENGTH
 from nautobot.core.models import BaseManager, BaseModel
 from nautobot.core.models.fields import ColorField
 from nautobot.core.models.querysets import RestrictedQuerySet
@@ -55,10 +54,10 @@ class NameColorContentTypesModel(
         to=ContentType,
         help_text="The content type(s) to which this model applies.",
     )
-    name = models.CharField(max_length=CHARFIELD_MAX_LENGTH, unique=True)
+    name = models.CharField(max_length=100, unique=True)
     color = ColorField(default=ColorChoices.COLOR_GREY)
     description = models.CharField(
-        max_length=CHARFIELD_MAX_LENGTH,
+        max_length=200,
         blank=True,
     )
 

@@ -1,9 +1,4 @@
 /* Layout */
-
-:root {
-    --navbar-transition-duration: 350ms;
-}
-
 * {
     margin: 0;
 }
@@ -23,15 +18,6 @@ body {
     margin: 0 auto -48px; /* the bottom margin is the negative value of the footer's height */
     padding-bottom: 30px;
 }
-#main-content {
-    transition-duration: var(--navbar-transition-duration);
-    transition-timing-function: ease-in-out;
-    transition-property: margin-left, width;
-    min-height: calc(100vh - 20px);
-}
-#main-content > .form {
-    margin-top: 20px;
-}
 .footer, .push {
     height: 48px; /* .push must be the same height as .footer */
 }
@@ -39,12 +25,10 @@ body {
     background-color: #f5f5f5;
     border-top-left-radius: 10px;
     border-top-right-radius: 10px;
+    margin-left: 20px;
+    margin-right: 20px;
+    overflow: auto;
     white-space: nowrap;
-    transition-duration: var(--navbar-transition-duration);
-    transition-timing-function: ease-in-out;
-    transition-property: margin-left, width;
-    overflow: visible;
-    margin: 0;
 }
 .footer .row {
     background-color: #f5f5f5;
@@ -340,10 +324,6 @@ ul.nav-tabs li a:hover,
 .label a {
     color: inherit;
 }
-ul.software-image-hierarchy {
-    list-style-type: "↳ ";
-    padding-left: 18px;
-}
 
 /* Filters */
 .filter-container {
@@ -504,14 +484,6 @@ h1 .btn-inline {
     position: relative;
     top: 2px;
 }
-.breadcrumb {
-    transition-duration: var(--navbar-transition-duration);
-    transition-timing-function: ease-in-out;
-    transition-property: margin-left, width;
-}
-.breadcrumb.collapsed {
-    margin-left: 240px;
-}
 .breadcrumb .mdi::before {
     position: relative;
     top: 4px;
@@ -624,17 +596,6 @@ td span.hover_copy:hover .hover_copy_button {
     z-index: 1030; /* `1030` is taken from Bootstrap's `navbar-fixed-top` */
     -ms-overflow-style: none;  /* Hide scrollbar IE and Edge */
     scrollbar-width: none;  /* Hide scrollbar Firefox */
-    transition-duration: var(--navbar-transition-duration);
-    transition-timing-function: ease-in-out;
-    transition-property: margin-left, width;
-}
-
-.navbar-fixed-left.collapsed {
-    width: 0px;
-}
-
-.navbar-fixed-left.collapsed:hover {
-    cursor: pointer;
 }
 
 .navbar-fixed-left > .container-fluid {
@@ -650,12 +611,7 @@ td span.hover_copy:hover .hover_copy_button {
 .navbar-fixed-left .navbar-header > .navbar-brand {
     height: auto;
     margin: 0;
-    padding: 25px 60px 10px 20px;
-    background-color: transparent;
-}
-
-.navbar-fixed-left .navbar-header > .navbar-brand img {
-    transition: opacity 0.5s ease;
+    padding: 29px 60px 10px 20px;
 }
 
 .navbar-fixed-left .navbar-form {
@@ -673,12 +629,6 @@ td span.hover_copy:hover .hover_copy_button {
 .navbar-fixed-left .navbar-nav {
     margin: 0;
     width: 100%;
-    display: none; /* Hide menu items by default */
-}
-
-/* When navbar is expanded, show menu items */
-.navbar-fixed-left:not(.collapsed) .navbar-nav {
-    display: block;
 }
 
 .navbar-fixed-left .navbar-nav > .dropdown > a {
@@ -803,7 +753,6 @@ td span.hover_copy:hover .hover_copy_button {
     margin-left: 5px;
     margin-right: 5px;
     gap: 5px;
-    text-wrap: nowrap;
 }
 
 .navbar-fixed-left .navbar-nav > li {
@@ -829,10 +778,6 @@ td span.hover_copy:hover .hover_copy_button {
     display: none;
 }
 
-.navbar-inverse .navbar-collapse, .navbar-inverse .navbar-form {
-    border-color: transparent;
-}
-
 .navbar-inverse .navbar-nav > li > a {
     color: #999999;
     transition: background-color 200ms ease, color 200ms ease;
@@ -844,16 +789,6 @@ td span.hover_copy:hover .hover_copy_button {
 
 .nav-dropdown-menu .mdi {
     margin-left: 2px;
-}
-
-.navbar-toggler {
-    position: fixed;
-    left: 225px;
-    top: 25px;
-    z-index: 1035;
-    justify-content: flex-start;
-    transition-duration: var(--navbar-transition-duration);
-    transition-timing-function: ease-in-out;
 }
 
 /* Collapse icon on homepage panels */
@@ -875,88 +810,4 @@ td span.hover_copy:hover .hover_copy_button {
 /* Make panel being dragged opaque */
 .dragging {
     opacity: 0.5;
-}
-
-/* Special diff block `<pre><code>...</code></pre>` backgrounds */
-pre.diff-added {
-    background-color: #e6ffec;
-}
-pre.diff-removed {
-    background-color: #ffebe9;
-}
-pre.diff-added code,
-pre.diff-removed code {
-    background-color: inherit;
-}
-
-/* Fix highlight.js and Bootstrap 3 style incompatibilities */
-pre:has(code.hljs) {
-    padding: 0; /* Reset Bootstrap 3 `pre` padding in case it contains a `code` element already formatted by highlight.js */
-}
-pre code.hljs {
-    padding: 11.5px; /* Same as Bootstrap 3 `pre` padding */
-}
-code.hljs {
-    padding: 2px 4px; /* Same as Bootstrap 3 `code` padding */
-}
-
-/* Table or tile dropdown context menu option spacings and icon colors */
-.context-menu li i {
-    margin-right: 10px;
-}
-.context-menu a:focus i,
-.context-menu a:focus span,
-.context-menu a:hover i,
-.context-menu a:hover span {
-    color: inherit;
-}
-
-/* Tile component styles */
-.tiles {
-    display: grid;
-    grid-gap: 20px;
-    grid-template-columns: repeat(auto-fit, minmax(445px, 1fr));
-}
-@media (max-width: 1007px) {
-    .tiles {
-        /* More than one tile won't fit into a row when the viewport is narrower than 1007px */
-        /* On the other hand this makes tiles shrink if container width becomes less than 445px */
-        grid-template-columns: 1fr;
-    }
-}
-.tile {
-    background: #ffffff;
-    border: 1px solid #d8d8d8;
-    border-radius: 10px;
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-}
-.tile.disabled {
-    background: #f4f4f4;
-    color: #7d7f7c;
-}
-.tile h2 {
-    margin: 10px 0;
-}
-.tile-header {
-    align-items: center;
-    display: flex;
-    gap: 10px;
-}
-.tile-header h3 {
-    color: #999999;
-    display: flex;
-    flex: 1;
-    font-size: 12px;
-    font-weight: 400;
-    margin: 0;
-}
-.tile-description {
-    flex: 1;
-}
-.tile-footer {
-    border-top: 1px solid #d8d8d8;
-    display: flex;
-    padding-top: 10px;
 }

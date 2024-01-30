@@ -51,7 +51,8 @@ def flatten_iterable(iterable):
     """
     for i in iterable:
         if hasattr(i, "__iter__") and not isinstance(i, str):
-            yield from flatten_iterable(i)
+            for j in flatten_iterable(i):
+                yield j
         else:
             yield i
 

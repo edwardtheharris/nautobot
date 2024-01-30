@@ -2,7 +2,8 @@ from nautobot.core.api.routers import OrderedDefaultRouter
 
 from . import views
 
-router = OrderedDefaultRouter(view_name="DCIM")
+router = OrderedDefaultRouter()
+router.APIRootView = views.DCIMRootView
 
 # Locations
 router.register("location-types", views.LocationTypeViewSet)
@@ -15,7 +16,6 @@ router.register("rack-reservations", views.RackReservationViewSet)
 
 # Device types
 router.register("manufacturers", views.ManufacturerViewSet)
-router.register("device-families", views.DeviceFamilyViewSet)
 router.register("device-types", views.DeviceTypeViewSet)
 
 # Device type components
@@ -69,17 +69,8 @@ router.register("power-feeds", views.PowerFeedViewSet)
 # Device Redundancy Group
 router.register("device-redundancy-groups", views.DeviceRedundancyGroupViewSet)
 
-# Software image files
-router.register("software-image-files", views.SoftwareImageFileViewSet)
-router.register("software-versions", views.SoftwareVersionViewSet)
-router.register("device-types-to-software-image-files", views.DeviceTypeToSoftwareImageFileViewSet)
-
 # Miscellaneous
 router.register("connected-device", views.ConnectedDeviceViewSet, basename="connected-device")
-
-# Controllers
-router.register("controllers", views.ControllerViewSet)
-router.register("controller-managed-device-groups", views.ControllerManagedDeviceGroupViewSet)
 
 app_name = "dcim-api"
 urlpatterns = router.urls

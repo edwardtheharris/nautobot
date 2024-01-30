@@ -3,6 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db.models import F, Model, OuterRef, Q, Subquery
 from django.db.models.functions import JSONObject
+from django_celery_beat.managers import ExtendedQuerySet
 
 from nautobot.core.models.query_functions import EmptyGroupByJSONBAgg
 from nautobot.core.models.querysets import RestrictedQuerySet
@@ -209,7 +210,7 @@ class DynamicGroupQuerySet(RestrictedQuerySet):
         Return the cache key for the queryset of `DynamicGroup` objects that are eligible to potentially contain the
         given object.
         """
-        return f"nautobot.{obj._meta.label_lower}._get_eligible_dynamic_groups"
+        return f"{obj._meta.label_lower}._get_eligible_dynamic_groups"
 
     def _get_eligible_dynamic_groups(self, obj, use_cache=False):
         """
@@ -271,7 +272,7 @@ class JobQuerySet(RestrictedQuerySet):
         )
 
 
-class ScheduledJobExtendedQuerySet(RestrictedQuerySet):
+class ScheduledJobExtendedQuerySet(RestrictedQuerySet, ExtendedQuerySet):
     """
     Base queryset used for the ScheduledJob class
     """

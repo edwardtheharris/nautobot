@@ -4,7 +4,6 @@ from django import forms as django_forms
 from django.apps import apps
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.http import QueryDict
 from django.test import TestCase
@@ -12,7 +11,7 @@ from django.test import TestCase
 from nautobot.circuits import models as circuits_models
 from nautobot.core import exceptions, forms, settings_funcs
 from nautobot.core.api import utils as api_utils
-from nautobot.core.models import fields as core_fields, utils as models_utils, validators
+from nautobot.core.models import fields as core_fields, utils as models_utils
 from nautobot.core.utils import data as data_utils, filtering, lookup, requests
 from nautobot.core.utils.migrations import update_object_change_ct_for_replaced_models
 from nautobot.dcim import filters as dcim_filters, forms as dcim_forms, models as dcim_models, tables
@@ -21,7 +20,7 @@ from nautobot.extras.choices import ObjectChangeActionChoices, RelationshipTypeC
 from nautobot.extras.models import ObjectChange
 from nautobot.extras.registry import registry
 
-from example_app.models import ExampleModel
+from example_plugin.models import ExampleModel
 
 
 class DictToFilterParamsTest(TestCase):
@@ -193,10 +192,10 @@ class GetFooForModelTest(TestCase):
         self.assertEqual(lookup.get_route_for_model("dcim.location", "list"), "dcim:location_list")
         self.assertEqual(lookup.get_route_for_model(dcim_models.Location, "list"), "dcim:location_list")
         self.assertEqual(
-            lookup.get_route_for_model("example_app.examplemodel", "list"),
-            "plugins:example_app:examplemodel_list",
+            lookup.get_route_for_model("example_plugin.examplemodel", "list"),
+            "plugins:example_plugin:examplemodel_list",
         )
-        self.assertEqual(lookup.get_route_for_model(ExampleModel, "list"), "plugins:example_app:examplemodel_list")
+        self.assertEqual(lookup.get_route_for_model(ExampleModel, "list"), "plugins:example_plugin:examplemodel_list")
 
         # API
         self.assertEqual(lookup.get_route_for_model("dcim.device", "list", api=True), "dcim-api:device-list")
@@ -210,12 +209,12 @@ class GetFooForModelTest(TestCase):
             lookup.get_route_for_model(dcim_models.Location, "detail", api=True), "dcim-api:location-detail"
         )
         self.assertEqual(
-            lookup.get_route_for_model("example_app.examplemodel", "list", api=True),
-            "plugins-api:example_app-api:examplemodel-list",
+            lookup.get_route_for_model("example_plugin.examplemodel", "list", api=True),
+            "plugins-api:example_plugin-api:examplemodel-list",
         )
         self.assertEqual(
             lookup.get_route_for_model(ExampleModel, "list", api=True),
-            "plugins-api:example_app-api:examplemodel-list",
+            "plugins-api:example_plugin-api:examplemodel-list",
         )
 
     def test_get_table_for_model(self):
@@ -358,7 +357,7 @@ class SlugifyFunctionsTest(TestCase):
     def test_slugify_dots_to_dashes(self):
         for content, expected in (
             ("Hello.World", "hello-world"),
-            ("apps.my_app.jobs", "apps-my_app-jobs"),
+            ("plugins.my_plugin.jobs", "plugins-my_plugin-jobs"),
             ("Lots of . spaces  ... and such", "lots-of-spaces-and-such"),
         ):
             self.assertEqual(core_fields.slugify_dots_to_dashes(content), expected)
@@ -371,52 +370,6 @@ class SlugifyFunctionsTest(TestCase):
             (" 123 main st", "a_123_main_st"),
         ):
             self.assertEqual(core_fields.slugify_dashes_to_underscores(content), expected)
-
-
-class LaxURLFieldTest(TestCase):
-    """Test LaxURLField and related functionality."""
-
-    VALID_URLS = [
-        "http://example.com",
-        "https://local-dns/foo/bar.git",  # not supported out-of-the-box by Django, hence our custom classes
-        "https://1.1.1.1:8080/",
-        "https://[2001:db8::]/",
-    ]
-    INVALID_URLS = [
-        "unknown://example.com/",
-        "foo:/",
-        "http://file://",
-    ]
-
-    def test_enhanced_url_validator(self):
-        for valid in self.VALID_URLS:
-            with self.subTest(valid=valid):
-                validators.EnhancedURLValidator()(valid)
-
-        for invalid in self.INVALID_URLS:
-            with self.subTest(invalid=invalid):
-                with self.assertRaises(django_forms.ValidationError):
-                    validators.EnhancedURLValidator()(invalid)
-
-    def test_forms_lax_url_field(self):
-        for valid in self.VALID_URLS:
-            with self.subTest(valid=valid):
-                forms.LaxURLField().clean(valid)
-
-        for invalid in self.INVALID_URLS:
-            with self.subTest(invalid=invalid):
-                with self.assertRaises(django_forms.ValidationError):
-                    forms.LaxURLField().clean(invalid)
-
-    def test_models_lax_url_field(self):
-        for valid in self.VALID_URLS:
-            with self.subTest(valid=valid):
-                core_fields.LaxURLField().run_validators(valid)
-
-        for invalid in self.INVALID_URLS:
-            with self.subTest(invalid=invalid):
-                with self.assertRaises(ValidationError):
-                    core_fields.LaxURLField().run_validators(invalid)
 
 
 class LookupRelatedFunctionTest(TestCase):

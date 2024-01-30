@@ -1,7 +1,6 @@
 """
 Class-modifying mixins that need to be standalone to avoid circular imports.
 """
-
 from django.urls import NoReverseMatch, reverse
 
 from nautobot.core.utils.lookup import get_route_for_model

@@ -16,15 +16,15 @@ Two files will be created: the public certificate (`nautobot.crt`) and the priva
 
 === "Ubuntu/Debian"
 
-    ```no-highlight title="Create SSL certificate"
+    ```no-highlight
     sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
       -keyout /etc/ssl/private/nautobot.key \
       -out /etc/ssl/certs/nautobot.crt
     ```
 
-=== "RHEL8"
+=== "CentOS/RHEL8"
 
-    ```no-highlight title="Create SSL certificate"
+    ```no-highlight
     sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
       -keyout /etc/pki/tls/private/nautobot.key \
       -out /etc/pki/tls/certs/nautobot.crt
@@ -48,37 +48,26 @@ Begin by installing NGINX:
 
 === "Ubuntu/Debian"
 
-    ```no-highlight title="Install NGINX"
+    ```no-highlight
     sudo apt install -y nginx
     ```
 
-=== "RHEL8"
+=== "CentOS/RHEL8"
 
-    ```no-highlight title="Install NGINX"
+    ```no-highlight
     sudo dnf install -y nginx
     ```
 
 #### Configure NGINX
 
+Once NGINX is installed, copy and paste the following NGINX configuration into
+`/etc/nginx/sites-available/nautobot.conf` for Ubuntu or `/etc/nginx/conf.d/nautobot.conf` for CentOS/RHEL:
+
 !!! note
     If the file location of SSL certificates had to be changed in the [Obtain an SSL Certificate](#obtain-an-ssl-certificate) step above, then the location will need to be changed in the NGINX configuration below.
 
 === "Ubuntu/Debian"
-    Once NGINX is installed, copy and paste the following NGINX configuration into `/etc/nginx/sites-available/nautobot.conf`:
-
-    === "Vim"
-
-        ```no-highlight title="Edit NGINX config with Vim"
-        vim /etc/nginx/sites-available/nautobot.conf
-        ```
-
-    === "Nano"
-
-        ```no-highlight title="Edit NGINX config with Nano"
-        nano /etc/nginx/sites-available/nautobot.conf
-        ```
-
-    ```nginxconf title="/etc/nginx/sites-available/nautobot.conf"
+    ```nginxconf
     server {
         listen 443 ssl http2 default_server;
         listen [::]:443 ssl http2 default_server;
@@ -122,22 +111,9 @@ Begin by installing NGINX:
     }
     ```
 
-=== "RHEL8"
-    Once NGINX is installed, copy and paste the following NGINX configuration for the Nautobot NGINX site.
+=== "CentOS/RHEL8"
 
-    === "Vim"
-
-        ```no-highlight title="Edit Nautobot site config with Vim"
-        vim /etc/nginx/conf.d/nautobot.conf
-        ```
-
-    === "Nano"
-
-        ```no-highlight title="Edit Nautobot site config with Nano"
-        nano /etc/nginx/conf.d/nautobot.conf
-        ```
-
-    ```nginxconf title="/etc/nginx/conf.d/nautobot.conf"
+    ```nginxconf
     server {
         listen 443 ssl http2 default_server;
         listen [::]:443 ssl http2 default_server;
@@ -188,16 +164,16 @@ Begin by installing NGINX:
     To enable the Nautobot site, you'll need to delete `/etc/nginx/sites-enabled/default` and create a symbolic link in the
     `sites-enabled` directory to the configuration file you just created:
 
-    ```no-highlight title="Link Nautobot NGINX site config"
+    ```no-highlight
     sudo rm -f /etc/nginx/sites-enabled/default
     sudo ln -s /etc/nginx/sites-available/nautobot.conf /etc/nginx/sites-enabled/nautobot.conf
     ```
 
-=== "RHEL8"
+=== "CentOS/RHEL8"
 
     Run the following command to disable the default site that comes with the `nginx` package:
 
-    ```no-highlight title="Link Nautobot NGINX site config"
+    ```no-highlight
     sudo sed -i 's@ default_server@@' /etc/nginx/nginx.conf
     ```
 
@@ -205,7 +181,7 @@ Begin by installing NGINX:
 
 Finally, restart the `nginx` service to use the new configuration.
 
-```no-highlight title="Restart NGINX"
+```no-highlight
 sudo systemctl restart nginx
 ```
 
@@ -217,7 +193,7 @@ sudo systemctl restart nginx
 Ensure that the `NAUTOBOT_ROOT` permissions are set to `755`.
 If permissions need to be changed, as the `nautobot` user run:
 
-```no-highlight title="Update all permissions to 755 in Nautobot Root"
+```no-highlight
 chmod 755 $NAUTOBOT_ROOT
 ```
 
@@ -246,53 +222,51 @@ If you get a *Static Media Failure; The following static media file failed to lo
 
 Example of correct permissions (at the `[root@localhost ~]#` prompt)
 
-```no-highlight title="List /opt/ files"
+```no-highlight
 ls -l /opt/
 ```
 
-??? example "Output of list files"
+Example output:
 
-    ```no-highlight title="Example output of list"
-    total 4
-    drwxr-xr-x. 11 nautobot nautobot 4096 Apr  5 11:24 nautobot
-    [root@localhost ~]#
-    ```
+```no-highlight
+total 4
+drwxr-xr-x. 11 nautobot nautobot 4096 Apr  5 11:24 nautobot
+[root@localhost ~]#
+```
 
 If the permissions are not correct, modify them accordingly.
 
 Example of modifying the permissions:
 
-```no-highlight title="List /opt/ files"
+```no-highlight
 ls -l /opt/
 ```
 
-??? example "Output of list files in `/opt`"
+Example output:
 
-    ```no-highlight title="Example output of list"
-    total 4
-    drwx------. 11 nautobot nautobot 4096 Apr  5 10:00 nautobot
-    ```
+```no-highlight
+total 4
+drwx------. 11 nautobot nautobot 4096 Apr  5 10:00 nautobot
+```
 
 At the prompt `[nautobot@localhost ~]$` execute:
 
-```no-highlight title="Update all permissions to 755 in Nautobot Root"
+```no-highlight
 chmod 755 $NAUTOBOT
 ```
 
 Then to verify that the user has the permissions to the directory execute at the `[nautobot@localhost ~]$` prompt:
 
-```no-highlight title="List files of /opt/"
+```no-highlight
 ls -l /opt/
 ```
 
-??? example "Output of list files in /opt"
+Example output shows that the user and group are both `nautobot` below:
 
-    Example output shows that the user and group are both `nautobot` below:
-
-    ```no-highlight title="Example output of ls"
-    total 4
-    drwxr-xr-x. 11 nautobot nautobot 4096 Apr  5 11:24 nautobot
-    ```
+```no-highlight
+total 4
+drwxr-xr-x. 11 nautobot nautobot 4096 Apr  5 11:24 nautobot
+```
 
 ### 502 Bad Gateway
 
@@ -302,4 +276,4 @@ If you are able to connect but receive a 502 (bad gateway) error, check the foll
 - NGINX is configured to connect to the port on which uWSGI is listening (default is `8001`).
 - SELinux may be preventing the reverse proxy connection. You may need to allow HTTP network connections with the
   command `setsebool -P httpd_can_network_connect 1`. For further information, view the [SELinux
-  troubleshooting](../installation-extras/selinux-troubleshooting.md) guide.
+  troubleshooting](selinux-troubleshooting.md) guide.

@@ -11,12 +11,11 @@
 </head>
 <body>
     {% include 'inc/nav_menu.html' %}
-    <div class="container-fluid wrapper" id="main-content">
-        <div class="banner-alert-area">
+    <div class="container-fluid wrapper">
         {% if request.user.is_authenticated %}
             {% if "BANNER_TOP"|settings_or_config %}
                 <div class="alert alert-info text-center" role="alert">
-                    {{ "BANNER_TOP"|settings_or_config|render_markdown }}
+                    {{ "BANNER_TOP"|settings_or_config|safe }}
                 </div>
             {% endif %}
         {% endif %}
@@ -35,14 +34,13 @@
                 {{ message }}
             </div>
         {% endfor %}
-        </div>
         {% block header %}{% endblock header %}
         {% block content %}{% endblock content %}
         <div class="push"></div>
         {% if request.user.is_authenticated %}
             {% if "BANNER_BOTTOM"|settings_or_config %}
                 <div class="alert alert-info text-center banner-bottom" role="alert">
-                    {{ "BANNER_BOTTOM"|settings_or_config|render_markdown }}
+                    {{ "BANNER_BOTTOM"|settings_or_config|safe }}
                 </div>
             {% endif %}
         {% endif %}

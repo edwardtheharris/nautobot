@@ -1,14 +1,13 @@
 import factory
 
 from nautobot.core.factory import (
-    get_random_instances,
     NautobotBoolIterator,
     OrganizationalModelFactory,
     PrimaryModelFactory,
     random_instance,
     UniqueFaker,
 )
-from nautobot.dcim.models import Location, Platform, SoftwareImageFile, SoftwareVersion
+from nautobot.dcim.models import Location, Platform
 from nautobot.extras.models import Role, Status
 from nautobot.tenancy.models import Tenant
 from nautobot.virtualization.models import Cluster, ClusterGroup, ClusterType, VirtualMachine
@@ -76,7 +75,6 @@ class VirtualMachineFactory(PrimaryModelFactory):
             # "has_primary_ip4",
             # "has_primary_ip6",
             "has_role",
-            "has_software_version",
             "has_tenant",
             "has_vcpus",
         )
@@ -111,22 +109,6 @@ class VirtualMachineFactory(PrimaryModelFactory):
 
     has_comments = NautobotBoolIterator()
     comments = factory.Maybe("has_comments", factory.Faker("paragraph"), "")
-
-    has_software_version = NautobotBoolIterator()
-    software_version = factory.Maybe(
-        "has_software_version",
-        random_instance(SoftwareVersion),
-        None,
-    )
-
-    @factory.post_generation
-    def software_image_files(self, create, extracted, **kwargs):
-        if not create:
-            return
-        if extracted:
-            self.software_image_files.set(extracted)
-        else:
-            self.software_image_files.set(get_random_instances(SoftwareImageFile))
 
 
 # TODO: add factories for VMInterface

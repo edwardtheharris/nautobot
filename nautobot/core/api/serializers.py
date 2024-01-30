@@ -26,13 +26,12 @@ from rest_framework.serializers import SerializerMethodField
 from rest_framework.utils.model_meta import _get_to_field, RelationInfo
 
 from nautobot.core import constants
-from nautobot.core.api.fields import LaxURLField, NautobotHyperlinkedRelatedField, ObjectTypeField
+from nautobot.core.api.fields import NautobotHyperlinkedRelatedField, ObjectTypeField
 from nautobot.core.api.utils import (
     dict_to_filter_params,
     nested_serializer_factory,
 )
 from nautobot.core.exceptions import ViewConfigException
-from nautobot.core.models.fields import LaxURLField as LaxURLModelField
 from nautobot.core.models.managers import TagsManager
 from nautobot.core.models.utils import construct_composite_key, construct_natural_slug
 from nautobot.core.templatetags.helpers import bettertitle
@@ -126,11 +125,6 @@ class BaseModelSerializer(OptInFieldsMixin, serializers.HyperlinkedModelSerializ
     - supports `?depth` query parameter. It is passed in as `nested_depth` to the `build_nested_field()` function
       to enable the dynamic generation of nested serializers.
     """
-
-    serializer_field_mapping = {
-        **serializers.ModelSerializer.serializer_field_mapping,
-        LaxURLModelField: LaxURLField,
-    }
 
     serializer_related_field = NautobotHyperlinkedRelatedField
 
@@ -672,8 +666,6 @@ class BaseModelSerializer(OptInFieldsMixin, serializers.HyperlinkedModelSerializ
                     data[key] = str(value)
                 elif value == constants.VARBINARY_IP_FIELD_REPR_OF_CSV_NO_OBJECT:
                     data[key] = constants.CSV_NO_OBJECT
-                elif value == "":
-                    data[key] = value
                 elif not value:
                     data[key] = constants.CSV_NULL_TYPE
                 else:

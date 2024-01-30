@@ -1,3 +1,4 @@
+from django.db.models import Q
 import django_filters
 
 from nautobot.core.filters import (
@@ -29,14 +30,9 @@ __all__ = (
 
 
 class ProviderFilterSet(NautobotFilterSet):
-    q = SearchFilter(
-        filter_predicates={
-            "name": "icontains",
-            "account": "icontains",
-            "noc_contact": "icontains",
-            "admin_contact": "icontains",
-            "comments": "icontains",
-        },
+    q = django_filters.CharFilter(
+        method="search",
+        label="Search",
     )
     circuits = NaturalKeyOrPKMultipleChoiceFilter(
         to_field_name="cid",
@@ -77,14 +73,25 @@ class ProviderFilterSet(NautobotFilterSet):
             "tags",
         ]
 
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        # TODO: Remove pylint disable after issue is resolved (see: https://github.com/PyCQA/pylint/issues/7381)
+        # pylint: disable=unsupported-binary-operation
+        return queryset.filter(
+            Q(name__icontains=value)
+            | Q(account__icontains=value)
+            | Q(noc_contact__icontains=value)
+            | Q(admin_contact__icontains=value)
+            | Q(comments__icontains=value)
+        )
+        # pylint: enable=unsupported-binary-operation
+
 
 class ProviderNetworkFilterSet(NautobotFilterSet):
-    q = SearchFilter(
-        filter_predicates={
-            "name": "icontains",
-            "description": "icontains",
-            "comments": "icontains",
-        },
+    q = django_filters.CharFilter(
+        method="search",
+        label="Search",
     )
     circuit_terminations = django_filters.ModelMultipleChoiceFilter(
         queryset=CircuitTermination.objects.all(),
@@ -104,6 +111,16 @@ class ProviderNetworkFilterSet(NautobotFilterSet):
     class Meta:
         model = ProviderNetwork
         fields = ["comments", "description", "id", "name", "tags"]
+
+    def search(self, queryset, name, value):
+        if not value.strip():
+            return queryset
+        # TODO: Remove pylint disable after issue is resolved (see: https://github.com/PyCQA/pylint/issues/7381)
+        # pylint: disable=unsupported-binary-operation
+        return queryset.filter(
+            Q(name__icontains=value) | Q(description__icontains=value) | Q(comments__icontains=value)
+        ).distinct()
+        # pylint: enable=unsupported-binary-operation
 
 
 class CircuitTypeFilterSet(NautobotFilterSet, NameSearchFilterSet):

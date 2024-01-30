@@ -2,7 +2,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from nautobot.core.constants import CHARFIELD_MAX_LENGTH
 from nautobot.dcim.fields import ASNField
 from nautobot.dcim.models import CableTermination, PathEndpoint
 from nautobot.extras.models import StatusField
@@ -29,9 +28,9 @@ __all__ = (
     "webhooks",
 )
 class ProviderNetwork(PrimaryModel):
-    name = models.CharField(max_length=CHARFIELD_MAX_LENGTH, db_index=True)
+    name = models.CharField(max_length=100, db_index=True)
     provider = models.ForeignKey(to="circuits.Provider", on_delete=models.PROTECT, related_name="provider_networks")
-    description = models.CharField(max_length=CHARFIELD_MAX_LENGTH, blank=True)
+    description = models.CharField(max_length=200, blank=True)
     comments = models.TextField(blank=True)
 
     class Meta:
@@ -62,7 +61,7 @@ class Provider(PrimaryModel):
     stores information pertinent to the user's relationship with the Provider.
     """
 
-    name = models.CharField(max_length=CHARFIELD_MAX_LENGTH, unique=True)
+    name = models.CharField(max_length=100, unique=True)
     asn = ASNField(
         blank=True,
         null=True,
@@ -70,7 +69,7 @@ class Provider(PrimaryModel):
         help_text="32-bit autonomous system number",
     )
     # todoindex:
-    account = models.CharField(max_length=CHARFIELD_MAX_LENGTH, blank=True, verbose_name="Account number")
+    account = models.CharField(max_length=100, blank=True, verbose_name="Account number")
     portal_url = models.URLField(blank=True, verbose_name="Portal URL")
     noc_contact = models.TextField(blank=True, verbose_name="NOC contact")
     admin_contact = models.TextField(blank=True, verbose_name="Admin contact")
@@ -98,9 +97,9 @@ class CircuitType(OrganizationalModel):
     "Long Haul," "Metro," or "Out-of-Band".
     """
 
-    name = models.CharField(max_length=CHARFIELD_MAX_LENGTH, unique=True)
+    name = models.CharField(max_length=100, unique=True)
     description = models.CharField(
-        max_length=CHARFIELD_MAX_LENGTH,
+        max_length=200,
         blank=True,
     )
 
@@ -127,7 +126,7 @@ class Circuit(PrimaryModel):
     Circuit port speed and commit rate are measured in Kbps.
     """
 
-    cid = models.CharField(max_length=CHARFIELD_MAX_LENGTH, verbose_name="Circuit ID")
+    cid = models.CharField(max_length=100, verbose_name="Circuit ID")
     status = StatusField(blank=False, null=False)
     provider = models.ForeignKey(to="circuits.Provider", on_delete=models.PROTECT, related_name="circuits")
     circuit_type = models.ForeignKey(to="CircuitType", on_delete=models.PROTECT, related_name="circuits")
@@ -140,7 +139,7 @@ class Circuit(PrimaryModel):
     )
     install_date = models.DateField(blank=True, null=True, verbose_name="Date installed")
     commit_rate = models.PositiveIntegerField(blank=True, null=True, verbose_name="Commit rate (Kbps)")
-    description = models.CharField(max_length=CHARFIELD_MAX_LENGTH, blank=True)
+    description = models.CharField(max_length=200, blank=True)
     comments = models.TextField(blank=True)
 
     # Cache associated CircuitTerminations
@@ -212,9 +211,9 @@ class CircuitTermination(PrimaryModel, PathEndpoint, CableTermination):
         verbose_name="Upstream speed (Kbps)",
         help_text="Upstream speed, if different from port speed",
     )
-    xconnect_id = models.CharField(max_length=CHARFIELD_MAX_LENGTH, blank=True, verbose_name="Cross-connect ID")
-    pp_info = models.CharField(max_length=CHARFIELD_MAX_LENGTH, blank=True, verbose_name="Patch panel/port(s)")
-    description = models.CharField(max_length=CHARFIELD_MAX_LENGTH, blank=True)
+    xconnect_id = models.CharField(max_length=50, blank=True, verbose_name="Cross-connect ID")
+    pp_info = models.CharField(max_length=100, blank=True, verbose_name="Patch panel/port(s)")
+    description = models.CharField(max_length=200, blank=True)
 
     class Meta:
         ordering = ["circuit", "term_side"]

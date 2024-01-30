@@ -176,9 +176,6 @@ class ContentTypeFilterMixin:
         if value in EMPTY_VALUES:
             return qs
 
-        if value.isdigit():
-            return qs.filter(**{f"{self.field_name}__pk": value})
-
         try:
             app_label, model = value.lower().split(".")
         except ValueError:
@@ -245,9 +242,6 @@ class ContentTypeMultipleChoiceFilter(django_filters.MultipleChoiceFilter):
             if self.conjoined:
                 qs = ContentTypeFilter.filter(self, qs, v)
             else:
-                if v.isdigit():
-                    q |= models.Q(**{f"{self.field_name}__pk": value})
-                    continue
                 # Similar to the ContentTypeFilter.filter() call above, but instead of narrowing the query each time
                 # (a AND b AND c ...) we broaden the query each time (a OR b OR c ...).
                 # Specifically, we're mapping a value like ['dcim.device', 'ipam.vlan'] to a query like
@@ -265,9 +259,6 @@ class ContentTypeMultipleChoiceFilter(django_filters.MultipleChoiceFilter):
 
         if not self.conjoined:
             qs = qs.filter(q)
-
-        if self.distinct:
-            qs = qs.distinct()
 
         return qs
 
@@ -531,10 +522,7 @@ class TreeNodeMultipleChoiceFilter(NaturalKeyOrPKMultipleChoiceFilter):
 
         # Fetch the generated Q object and filter the incoming qs with it before passing it along.
         query = self.generate_query(value)
-        result = self.get_method(qs)(query)
-        if self.distinct:
-            result = result.distinct()
-        return result
+        return self.get_method(qs)(query)
 
 
 #
@@ -721,11 +709,6 @@ class BaseFilterSet(django_filters.FilterSet):
         Override filter generation to support dynamic lookup expressions for certain filter types.
         """
         filters = super().get_filters()
-
-        # Remove any filters that may have been auto-generated from private model attributes
-        for filter_name in list(filters.keys()):
-            if filter_name.startswith("_"):
-                del filters[filter_name]
 
         # django-filters has no concept of "abstract" filtersets, so we have to fake it
         if cls._meta.model is not None:

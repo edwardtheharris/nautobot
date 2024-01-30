@@ -1,4 +1,3 @@
-import random
 import time
 from unittest.mock import patch
 
@@ -16,7 +15,6 @@ from nautobot.dcim.choices import PortTypeChoices
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.forms import DeviceFilterForm, DeviceForm
 from nautobot.dcim.models import (
-    Controller,
     Device,
     DeviceType,
     FrontPort,
@@ -44,12 +42,12 @@ from nautobot.extras.models import (
 )
 from nautobot.ipam.models import Prefix
 from nautobot.tenancy.models import Tenant
+import secrets
 
 
 class DynamicGroupTestBase(TestCase):
     @classmethod
     def setUpTestData(cls):
-        Controller.objects.filter(controller_device__isnull=False).delete()
         Device.objects.all().delete()
         cls.device_ct = ContentType.objects.get_for_model(Device)
         cls.dynamicgroup_ct = ContentType.objects.get_for_model(DynamicGroup)
@@ -646,7 +644,7 @@ class DynamicGroupModelTest(DynamicGroupTestBase):  # TODO: BaseModelTestCase mi
 
         queryset = group.get_queryset()
 
-        # Assert that both querysets return the same results
+        # Assert that both querysets resturn the same results
         group_qs = queryset.filter(multi_query)
         device_qs = Device.objects.filter(location__name__in=multi_value)
         self.assertQuerySetEqual(group_qs, device_qs)
@@ -658,13 +656,6 @@ class DynamicGroupModelTest(DynamicGroupTestBase):  # TODO: BaseModelTestCase mi
         solo_qs = queryset.filter(solo_query)
         interface_qs = Device.objects.filter(interfaces__isnull=True)
         self.assertQuerySetEqual(solo_qs, interface_qs)
-
-        # Tags are conjoined in the TagFilterSet, ensure that tags__name is using AND. We know this isn't right
-        # since the resulting query actually does tag.name == tag_1 AND tag.name == tag_2, but django_filter does
-        # not use Q evaluation for conjoined filters. This function is only used for the display, and the display
-        # is good enough to get the point across.
-        tags_query = group.generate_query_for_filter(filter_field=fs.filters["tags"], value=["tag_1", "tag_2"])
-        self.assertEqual(str(tags_query), "(AND: ('tags__name', 'tag_1'), ('tags__name', 'tag_2'))")
 
         # Test that a nested field_name w/ `generate_query` works as expected. This is explicitly to
         # test a regression w/ nested name-related values such as `DeviceFilterSet.manufacturer` which
@@ -812,7 +803,7 @@ class DynamicGroupModelTest(DynamicGroupTestBase):  # TODO: BaseModelTestCase mi
 
         # Assert that ordering is always deterministic by shuffling the list of pks and asserting
         # that the ordered pk matches that shuffled order.
-        random.shuffle(pk_list)
+        secrets.SystemRandom().shuffle(pk_list)
         ordered_qs = self.parent.ordered_queryset_from_pks(pk_list)
         self.assertEqual(
             pk_list,
@@ -977,7 +968,7 @@ class DynamicGroupModelTest(DynamicGroupTestBase):  # TODO: BaseModelTestCase mi
         )
         this_dg.validated_save()
 
-        this_dg.set_filter({"example_app_prefix_tenant_name": [a_tenant]})
+        this_dg.set_filter({"example_plugin_prefix_tenant_name": [a_tenant]})
         this_dg.validated_save()
 
     def test_unapplied_tags_can_be_added_to_dynamic_group_filters(self):
@@ -1025,7 +1016,7 @@ class DynamicGroupModelTest(DynamicGroupTestBase):  # TODO: BaseModelTestCase mi
             self.assertEqual(mock_get_queryset.call_count, 2)
 
         # Clean-up after ourselves
-        cache.delete(group.members_cache_key)
+        cache.delete(f"{group.__class__.__name__}.{group.id}.cached_members")
 
     @override_settings(DYNAMIC_GROUPS_MEMBER_CACHE_TIMEOUT=0)
     def test_member_caching_disabled(self):

@@ -5,7 +5,6 @@ from datetime import timedelta
 import logging
 
 from celery import schedules
-from celery.exceptions import NotRegistered
 from celery.utils.log import get_logger, LoggingProxy
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -23,7 +22,7 @@ from nautobot.core.celery import (
     NautobotKombuJSONEncoder,
     setup_nautobot_job_logging,
 )
-from nautobot.core.constants import CHARFIELD_MAX_LENGTH
+from nautobot.core.celery.control import refresh_git_repository
 from nautobot.core.models import BaseManager, BaseModel
 from nautobot.core.models.fields import JSONArrayField
 from nautobot.core.models.generics import OrganizationalModel, PrimaryModel
@@ -38,6 +37,7 @@ from nautobot.extras.constants import (
     JOB_LOG_MAX_ABSOLUTE_URL_LENGTH,
     JOB_LOG_MAX_GROUPING_LENGTH,
     JOB_LOG_MAX_LOG_OBJECT_LENGTH,
+    JOB_MAX_GROUPING_LENGTH,
     JOB_MAX_NAME_LENGTH,
     JOB_OVERRIDABLE_FIELDS,
 )
@@ -99,7 +99,7 @@ class Job(PrimaryModel):
     # Human-readable information, potentially inherited from the source code
     # See also the docstring of nautobot.extras.jobs.BaseJob.Meta.
     grouping = models.CharField(
-        max_length=CHARFIELD_MAX_LENGTH,
+        max_length=JOB_MAX_GROUPING_LENGTH,
         help_text="Human-readable grouping that this job belongs to",
         db_index=True,
     )
@@ -164,7 +164,7 @@ class Job(PrimaryModel):
         "<br>Set to 0 to use Nautobot system default",
     )
     task_queues = JSONArrayField(
-        base_field=models.CharField(max_length=CHARFIELD_MAX_LENGTH, blank=True),
+        base_field=models.CharField(max_length=100, blank=True),
         default=list,
         blank=True,
         help_text="Comma separated list of task queues that this job can run on. A blank list will use the default queue",
@@ -233,20 +233,13 @@ class Job(PrimaryModel):
     def __str__(self):
         return self.name
 
-    @property
+    @cached_property
     def job_class(self):
-        """
-        Get the Job class (source code) associated with this Job model.
-
-        CAUTION: if the Job is provided by a Git Repository or is installed in JOBS_ROOT, you may need or wish to
-        call `get_job(self.class_path, reload=True)` to ensure that you have the latest Job code...
-        """
-        from nautobot.extras.jobs import get_job
-
+        """Get the Job class (source code) associated with this Job model."""
         if not self.installed:
             return None
         try:
-            return get_job(self.class_path)
+            return self.job_task.__class__
         except Exception as exc:
             logger.error(str(exc))
             return None
@@ -285,31 +278,28 @@ class Job(PrimaryModel):
 
     @property
     def job_task(self):
-        """Get an instance of the associated Job class, refreshing it if necessary."""
-        from nautobot.extras.jobs import get_job
-
-        try:
-            return get_job(self.class_path, reload=True)()
-        except TypeError as err:  # keep 2.0-2.2.2 exception behavior
-            raise NotRegistered from err
+        """Get the registered Celery task, refreshing it if necessary."""
+        if self.git_repository is not None:
+            # If this Job comes from a Git repository, make sure we have the correct version of said code.
+            refresh_git_repository(
+                state=None, repository_pk=self.git_repository.pk, head=self.git_repository.current_head
+            )
+        return app.tasks[f"{self.module_name}.{self.job_class_name}"]
 
     def clean(self):
         """For any non-overridden fields, make sure they get reset to the actual underlying class value if known."""
-        from nautobot.extras.jobs import get_job
-
-        job_class = get_job(self.class_path, reload=True)
-        if job_class is not None:
+        if self.job_class is not None:
             for field_name in JOB_OVERRIDABLE_FIELDS:
                 if not getattr(self, f"{field_name}_override", False):
-                    setattr(self, field_name, getattr(job_class, field_name))
+                    setattr(self, field_name, getattr(self.job_class, field_name))
 
         # Protect against invalid input when auto-creating Job records
         if len(self.module_name) > JOB_MAX_NAME_LENGTH:
             raise ValidationError(f"Module name may not exceed {JOB_MAX_NAME_LENGTH} characters in length")
         if len(self.job_class_name) > JOB_MAX_NAME_LENGTH:
             raise ValidationError(f"Job class name may not exceed {JOB_MAX_NAME_LENGTH} characters in length")
-        if len(self.grouping) > CHARFIELD_MAX_LENGTH:
-            raise ValidationError(f"Grouping may not exceed {CHARFIELD_MAX_LENGTH} characters in length")
+        if len(self.grouping) > JOB_MAX_GROUPING_LENGTH:
+            raise ValidationError(f"Grouping may not exceed {JOB_MAX_GROUPING_LENGTH} characters in length")
         if len(self.name) > JOB_MAX_NAME_LENGTH:
             raise ValidationError(f"Name may not exceed {JOB_MAX_NAME_LENGTH} characters in length")
 
@@ -317,25 +307,6 @@ class Job(PrimaryModel):
             raise ValidationError(
                 {"approval_required": "A job that may have sensitive variables cannot be marked as requiring approval"}
             )
-
-    def save(self, *args, **kwargs):
-        """When a Job is uninstalled, auto-disable all associated JobButtons, JobHooks, and ScheduledJobs."""
-        super().save(*args, **kwargs)
-        if not self.installed:
-            if self.is_job_button_receiver:
-                for jb in JobButton.objects.filter(job=self, enabled=True):
-                    logger.info("Disabling JobButton %s derived from %s", jb, self)
-                    jb.enabled = False
-                    jb.save()
-            if self.is_job_hook_receiver:
-                for jh in JobHook.objects.filter(job=self, enabled=True):
-                    logger.info("Disabling JobHook %s derived from %s", jh, self)
-                    jh.enabled = False
-                    jh.save()
-            for sj in ScheduledJob.objects.filter(job_model=self, enabled=True):
-                logger.info("Disabling ScheduledJob %s derived from %s", sj, self)
-                sj.enabled = False
-                sj.save()
 
 
 @extras_features("graphql")
@@ -362,7 +333,7 @@ class JobHook(OrganizationalModel):
         on_delete=models.CASCADE,
         limit_choices_to={"is_job_hook_receiver": True},
     )
-    name = models.CharField(max_length=CHARFIELD_MAX_LENGTH, unique=True)
+    name = models.CharField(max_length=100, unique=True)
     type_create = models.BooleanField(default=False, help_text="Call this job hook when a matching object is created.")
     type_delete = models.BooleanField(default=False, help_text="Call this job hook when a matching object is deleted.")
     type_update = models.BooleanField(default=False, help_text="Call this job hook when a matching object is updated.")
@@ -382,9 +353,6 @@ class JobHook(OrganizationalModel):
         if not self.type_create and not self.type_delete and not self.type_update:
             raise ValidationError("You must select at least one type: create, update, and/or delete.")
 
-        if self.enabled and not (self.job.installed and self.job.enabled):
-            raise ValidationError({"enabled": "The selected Job is not installed and enabled"})
-
     @classmethod
     def check_for_conflicts(
         cls, instance=None, content_types=None, job=None, type_create=None, type_update=None, type_delete=None
@@ -397,7 +365,6 @@ class JobHook(OrganizationalModel):
         """
 
         conflicts = {}
-
         job_hook_error_msg = "A job hook already exists for {action} on {content_type} to job {job}"
 
         if instance is not None and instance.present_in_database:
@@ -487,9 +454,9 @@ class JobResult(BaseModel, CustomFieldModel):
     job_model = models.ForeignKey(
         to="extras.Job", null=True, blank=True, on_delete=models.SET_NULL, related_name="job_results"
     )
-    name = models.CharField(max_length=CHARFIELD_MAX_LENGTH, db_index=True)
+    name = models.CharField(max_length=255, db_index=True)
     task_name = models.CharField(  # noqa: DJ001  # django-nullable-model-string-field
-        max_length=CHARFIELD_MAX_LENGTH,
+        max_length=255,
         null=True,  # TODO: should this be blank=True instead?
         db_index=True,
         help_text="Registered name of the Celery task for this job. Internal use only.",
@@ -650,14 +617,12 @@ class JobResult(BaseModel, CustomFieldModel):
             schedule (ScheduledJob, optional): ScheduledJob instance to link to the JobResult. Cannot be used with synchronous=True.
             task_queue (str, optional): The celery queue to send the job to. If not set, use the default celery queue.
             synchronous (bool, optional): If True, run the job in the current process, blocking until the job completes.
-            *job_args: positional args passed to the job task (UNUSED)
+            *job_args: positional args passed to the job task
             **job_kwargs: keyword args passed to the job task
 
         Returns:
             JobResult instance
         """
-        from nautobot.extras.jobs import run_job  # TODO circular import
-
         if schedule is not None and synchronous:
             raise ValueError("Scheduled jobs cannot be run synchronously")
 
@@ -701,11 +666,8 @@ class JobResult(BaseModel, CustomFieldModel):
             redirect_logger = get_logger("celery.redirected")
             proxy = LoggingProxy(redirect_logger, app.conf.worker_redirect_stdouts_level)
             with contextlib.redirect_stdout(proxy), contextlib.redirect_stderr(proxy):
-                eager_result = run_job.apply(
-                    args=[job_model.class_path, *job_args],
-                    kwargs=job_kwargs,
-                    task_id=str(job_result.id),
-                    **job_celery_kwargs,
+                eager_result = job_model.job_task.apply(
+                    args=job_args, kwargs=job_kwargs, task_id=str(job_result.id), **job_celery_kwargs
                 )
 
             # copy fields from eager result to job result
@@ -725,11 +687,8 @@ class JobResult(BaseModel, CustomFieldModel):
         else:
             # Jobs queued inside of a transaction need to run after the transaction completes and the JobResult is saved to the database
             transaction.on_commit(
-                lambda: run_job.apply_async(
-                    args=[job_model.class_path, *job_args],
-                    kwargs=job_kwargs,
-                    task_id=str(job_result.id),
-                    **job_celery_kwargs,
+                lambda: job_model.job_task.apply_async(
+                    args=job_args, kwargs=job_kwargs, task_id=str(job_result.id), **job_celery_kwargs
                 )
             )
 
@@ -805,8 +764,7 @@ class JobButton(BaseModel, ChangeLoggedModel, NotesMixin):
         verbose_name="Object types",
         help_text="The object type(s) to which this job button applies.",
     )
-    name = models.CharField(max_length=CHARFIELD_MAX_LENGTH, unique=True)
-    enabled = models.BooleanField(default=True)
+    name = models.CharField(max_length=100, unique=True)
     text = models.CharField(
         max_length=500,
         help_text="Jinja2 template code for button text. Reference the object as <code>{{ obj }}</code> such as <code>{{ obj.platform.name }}</code>. Buttons which render as empty text will not be displayed.",
@@ -819,7 +777,7 @@ class JobButton(BaseModel, ChangeLoggedModel, NotesMixin):
     )
     weight = models.PositiveSmallIntegerField(default=100)
     group_name = models.CharField(
-        max_length=CHARFIELD_MAX_LENGTH,
+        max_length=50,
         blank=True,
         help_text="Buttons with the same group will appear as a dropdown menu. Group dropdown buttons will inherit the button class from the button with the lowest weight in the group.",
     )
@@ -840,12 +798,6 @@ class JobButton(BaseModel, ChangeLoggedModel, NotesMixin):
 
     def __str__(self):
         return self.name
-
-    def clean(self):
-        super().clean()
-
-        if self.enabled and not (self.job.installed and self.job.enabled):
-            raise ValidationError({"enabled": "The selected Job is not installed and enabled"})
 
 
 class ScheduledJobs(models.Model):
@@ -892,10 +844,7 @@ class ScheduledJob(BaseModel):
     """Model representing a periodic task."""
 
     name = models.CharField(
-        max_length=CHARFIELD_MAX_LENGTH,
-        verbose_name="Name",
-        help_text="Human-readable description of this scheduled task",
-        unique=True,
+        max_length=200, verbose_name="Name", help_text="Human-readable description of this scheduled task", unique=True
     )
     task = models.CharField(
         # JOB_MAX_NAME_LENGTH is the longest permitted module name as well as the longest permitted class name,
@@ -916,7 +865,7 @@ class ScheduledJob(BaseModel):
     kwargs = models.JSONField(blank=True, default=dict, encoder=NautobotKombuJSONEncoder)
     celery_kwargs = models.JSONField(blank=True, default=dict, encoder=NautobotKombuJSONEncoder)
     queue = models.CharField(
-        max_length=CHARFIELD_MAX_LENGTH,
+        max_length=200,
         blank=True,
         default="",
         verbose_name="Queue Override",
@@ -988,7 +937,7 @@ class ScheduledJob(BaseModel):
         help_text="Datetime that the schedule was approved",
     )
     crontab = models.CharField(
-        max_length=CHARFIELD_MAX_LENGTH,
+        max_length=255,
         blank=True,
         verbose_name="Custom cronjob",
         help_text="Cronjob syntax string for custom scheduling",

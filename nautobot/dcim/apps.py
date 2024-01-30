@@ -5,18 +5,14 @@ class DCIMConfig(NautobotConfig):
     name = "nautobot.dcim"
     verbose_name = "DCIM"
     searchable_models = [
-        "cable",
-        "controller",
-        "device",
-        "devicefamily",
-        "deviceredundancygroup",
-        "devicetype",
         "location",
-        "powerfeed",
         "rack",
         "rackgroup",
-        "softwareversion",
+        "devicetype",
+        "device",
         "virtualchassis",
+        "cable",
+        "powerfeed",
     ]
 
     def ready(self):

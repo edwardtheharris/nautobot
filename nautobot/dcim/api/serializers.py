@@ -54,15 +54,11 @@ from nautobot.dcim.models import (
     ConsolePortTemplate,
     ConsoleServerPort,
     ConsoleServerPortTemplate,
-    Controller,
-    ControllerManagedDeviceGroup,
     Device,
     DeviceBay,
     DeviceBayTemplate,
-    DeviceFamily,
     DeviceRedundancyGroup,
     DeviceType,
-    DeviceTypeToSoftwareImageFile,
     FrontPort,
     FrontPortTemplate,
     Interface,
@@ -86,8 +82,6 @@ from nautobot.dcim.models import (
     RackReservation,
     RearPort,
     RearPortTemplate,
-    SoftwareImageFile,
-    SoftwareVersion,
     VirtualChassis,
 )
 from nautobot.extras.api.mixins import (
@@ -383,15 +377,6 @@ class ManufacturerSerializer(NautobotModelSerializer):
         list_display_fields = ["name", "device_type_count", "platform_count", "description"]
 
 
-class DeviceFamilySerializer(NautobotModelSerializer):
-    device_type_count = serializers.IntegerField(read_only=True)
-
-    class Meta:
-        model = DeviceFamily
-        fields = "__all__"
-        list_display_fields = ["name", "device_type_count", "description"]
-
-
 class DeviceTypeSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     subdevice_role = ChoiceField(choices=SubdeviceRoleChoices, allow_blank=True, required=False)
     front_image = serializers.ImageField(allow_null=True, required=False)
@@ -422,11 +407,6 @@ class DeviceTypeSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
                 },
             ],
             "include_others": True,
-        }
-        extra_kwargs = {
-            "device_family": {
-                "required": False,
-            },
         }
 
 
@@ -598,7 +578,6 @@ class DeviceSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
                             "secrets_group",
                             "device_redundancy_group",
                             "device_redundancy_group_priority",
-                            "controller_managed_device_group",
                         ]
                     },
                 },
@@ -748,10 +727,10 @@ class InterfaceSerializer(
         # TODO: after Location model replaced Site, which was not a hierarchical model, should we allow users to assign a VLAN belongs to
         # the parent Location or the child location of `device.location`?
         for vlan in data.get("tagged_vlans", []):
-            if vlan.locations.exists() and not vlan.locations.filter(pk=device.location.pk).exists():
+            if vlan.location not in [device.location, None]:
                 raise serializers.ValidationError(
                     {
-                        "tagged_vlans": f"VLAN {vlan} must have a common location as the interface's parent device, or "
+                        "tagged_vlans": f"VLAN {vlan} must belong to the same location as the interface's parent device, or "
                         f"it must be global."
                     }
                 )
@@ -1017,39 +996,4 @@ class PowerFeedSerializer(
 
     class Meta:
         model = PowerFeed
-        fields = "__all__"
-
-
-#
-# Software image files
-#
-
-
-class SoftwareImageFileSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
-    class Meta:
-        model = SoftwareImageFile
-        fields = "__all__"
-
-
-class SoftwareVersionSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
-    class Meta:
-        model = SoftwareVersion
-        fields = "__all__"
-
-
-class DeviceTypeToSoftwareImageFileSerializer(ValidatedModelSerializer):
-    class Meta:
-        model = DeviceTypeToSoftwareImageFile
-        fields = "__all__"
-
-
-class ControllerSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
-    class Meta:
-        model = Controller
-        fields = "__all__"
-
-
-class ControllerManagedDeviceGroupSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
-    class Meta:
-        model = ControllerManagedDeviceGroup
         fields = "__all__"

@@ -10,7 +10,6 @@ from nautobot.core.api import (
     NautobotModelSerializer,
     ValidatedModelSerializer,
 )
-from nautobot.dcim.models.locations import Location
 from nautobot.extras.api.mixins import TaggedModelSerializerMixin
 from nautobot.ipam import constants
 from nautobot.ipam.api.fields import IPFieldSerializer
@@ -21,16 +20,12 @@ from nautobot.ipam.models import (
     IPAddressToInterface,
     Namespace,
     Prefix,
-    PrefixLocationAssignment,
     RIR,
     RouteTarget,
     Service,
     VLAN,
     VLANGroup,
-    VLANLocationAssignment,
     VRF,
-    VRFDeviceAssignment,
-    VRFPrefixAssignment,
 )
 
 #
@@ -56,30 +51,6 @@ class VRFSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
         fields = "__all__"
         list_display_fields = ["name", "rd", "tenant", "description"]
         extra_kwargs = {"namespace": {"default": get_default_namespace}}
-
-
-class VRFDeviceAssignmentSerializer(ValidatedModelSerializer):
-    class Meta:
-        model = VRFDeviceAssignment
-        fields = "__all__"
-        validators = []
-
-    def validate(self, data):
-        if data.get("device"):
-            validator = UniqueTogetherValidator(queryset=VRFDeviceAssignment.objects.all(), fields=("device", "vrf"))
-            validator(data, self)
-        if data.get("virtual_machine"):
-            validator = UniqueTogetherValidator(
-                queryset=VRFDeviceAssignment.objects.all(), fields=("virtual_machine", "vrf")
-            )
-            validator(data, self)
-        return super().validate(data)
-
-
-class VRFPrefixAssignmentSerializer(ValidatedModelSerializer):
-    class Meta:
-        model = VRFPrefixAssignment
-        fields = "__all__"
 
 
 #
@@ -129,13 +100,6 @@ class VLANGroupSerializer(NautobotModelSerializer):
 
 class VLANSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     prefix_count = serializers.IntegerField(read_only=True)
-    location = NautobotHyperlinkedRelatedField(
-        allow_null=True,
-        queryset=Location.objects.all(),
-        required=False,
-        view_name="dcim-api:location-detail",
-        write_only=True,
-    )
 
     class Meta:
         model = VLAN
@@ -144,7 +108,7 @@ class VLANSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
         fields = "__all__"
         list_display_fields = [
             "vid",
-            "locations",
+            "location",
             "vlan_group",
             "name",
             "prefixes",
@@ -154,7 +118,6 @@ class VLANSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
             "description",
         ]
         validators = []
-        extra_kwargs = {"locations": {"read_only": True}}
 
     def validate(self, data):
         # Validate uniqueness of vid and name if a group has been assigned.
@@ -169,48 +132,6 @@ class VLANSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
         return data
 
 
-class VLANLegacySerializer(VLANSerializer):
-    """
-    This legacy serializer is used for API versions 2.0 and 2.1.
-    And it is not longer valid for API version 2.2 and so on.
-    """
-
-    location = NautobotHyperlinkedRelatedField(
-        allow_null=True, queryset=Location.objects.all(), required=False, view_name="dcim-api:location-detail"
-    )
-
-    class Meta:
-        model = VLAN
-        fields = [
-            "id",
-            "object_type",
-            "display",
-            "url",
-            "natural_slug",
-            "prefix_count",
-            "vid",
-            "name",
-            "description",
-            "vlan_group",
-            "status",
-            "role",
-            "tenant",
-            "location",
-            "created",
-            "last_updated",
-            "tags",
-            "notes_url",
-            "custom_fields",
-        ]
-        validators = []
-
-
-class VLANLocationAssignmentSerializer(ValidatedModelSerializer):
-    class Meta:
-        model = VLANLocationAssignment
-        fields = "__all__"
-
-
 #
 # Prefixes
 #
@@ -219,14 +140,6 @@ class VLANLocationAssignmentSerializer(ValidatedModelSerializer):
 class PrefixSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     prefix = IPFieldSerializer()
     type = ChoiceField(choices=PrefixTypeChoices, default=PrefixTypeChoices.TYPE_NETWORK)
-    # for backward compatibility with 2.0-2.1 where a Prefix had only a single Location
-    location = NautobotHyperlinkedRelatedField(
-        allow_null=True,
-        queryset=Location.objects.all(),
-        required=False,
-        view_name="dcim-api:location-detail",
-        write_only=True,
-    )
 
     class Meta:
         model = Prefix
@@ -238,7 +151,7 @@ class PrefixSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
             "status",
             "vrf",
             "tenant",
-            "locations",
+            "location",
             "vlan",
             "role",
             "description",
@@ -247,7 +160,6 @@ class PrefixSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
             "ip_version": {"read_only": True},
             "namespace": {"default": get_default_namespace},
             "prefix_length": {"read_only": True},
-            "locations": {"read_only": True},
         }
 
         detail_view_config = {
@@ -266,7 +178,7 @@ class PrefixSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
                             "description",
                             "role",
                             "vlan",
-                            "locations",
+                            "location",
                             "tenant",
                             "rir",
                             "date_allocated",
@@ -277,74 +189,27 @@ class PrefixSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
         }
 
 
-class PrefixLegacySerializer(PrefixSerializer):
-    """Serializer for API versions 2.0-2.1 where a Prefix only had a single Location."""
+class PrefixLengthSerializer(serializers.Serializer):
+    prefix_length = serializers.IntegerField()
 
-    location = NautobotHyperlinkedRelatedField(
-        allow_null=True, queryset=Location.objects.all(), required=False, view_name="dcim-api:location-detail"
-    )
+    def to_internal_value(self, data):
+        requested_prefix = data.get("prefix_length")
+        if requested_prefix is None:
+            raise serializers.ValidationError({"prefix_length": "this field can not be missing"})
+        if not isinstance(requested_prefix, int):
+            raise serializers.ValidationError({"prefix_length": "this field must be int type"})
 
-    class Meta(PrefixSerializer.Meta):
-        fields = [
-            "id",
-            "object_type",
-            "display",
-            "url",
-            "natural_slug",
-            "prefix",
-            "network",
-            "broadcast",
-            "prefix_length",
-            "type",
-            "status",
-            "role",
-            "parent",
-            "ip_version",
-            "location",
-            "namespace",
-            "tenant",
-            "vlan",
-            "rir",
-            "date_allocated",
-            "description",
-            "created",
-            "last_updated",
-            "tags",
-            "notes_url",
-            "custom_fields",
-        ]
-
-
-class PrefixLocationAssignmentSerializer(ValidatedModelSerializer):
-    class Meta:
-        model = PrefixLocationAssignment
-        fields = "__all__"
-
-
-class PrefixLengthSerializer(PrefixLegacySerializer):
-    """
-    Input serializer for POST to /api/ipam/prefixes/<id>/available-prefixes/, i.e. allocating one or more sub-prefixes.
-
-    Since setting of multiple locations on create is not supported, this uses the legacy single-location option.
-    """
-
-    prefix_length = serializers.IntegerField(required=True)
-
-    class Meta(PrefixLegacySerializer.Meta):
-        fields = PrefixLegacySerializer.Meta.fields.copy()
-        fields.remove("prefix")
-        fields.remove("network")
-        fields.remove("broadcast")
-        fields.remove("parent")
-        fields.remove("ip_version")
-        fields.remove("namespace")
+        prefix = self.context.get("prefix")
+        if prefix.ip_version == 4 and requested_prefix > 32:
+            raise serializers.ValidationError({"prefix_length": f"Invalid prefix length ({requested_prefix}) for IPv4"})
+        elif prefix.ip_version == 6 and requested_prefix > 128:
+            raise serializers.ValidationError({"prefix_length": f"Invalid prefix length ({requested_prefix}) for IPv6"})
+        return data
 
 
 class AvailablePrefixSerializer(serializers.Serializer):
     """
     Representation of a prefix which does not exist in the database.
-
-    Response serializer for a GET to /api/ipam/prefixes/<id>/available-prefixes/.
     """
 
     ip_version = serializers.IntegerField(read_only=True)
@@ -440,8 +305,6 @@ class IPAddressSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
 class AvailableIPSerializer(serializers.Serializer):
     """
     Representation of an IP address which does not exist in the database.
-
-    Response serializer for a GET to /api/ipam/prefixes/<id>/available-ips/.
     """
 
     ip_version = serializers.IntegerField(read_only=True)
@@ -454,31 +317,6 @@ class AvailableIPSerializer(serializers.Serializer):
                 ("address", f"{instance}/{self.context['prefix'].prefixlen}"),
             ]
         )
-
-
-class IPAllocationSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
-    """
-    Input serializer for POST to /api/ipam/prefixes/<id>/available-ips/, i.e. allocating addresses from a prefix.
-    """
-
-    class Meta:
-        model = IPAddress
-        fields = (
-            # not address/namespace/parent as those are implied by the selected prefix
-            "status",
-            "type",
-            "dns_name",
-            "description",
-            "role",
-            "tenant",
-            "nat_inside",
-            "tags",
-            "custom_fields",
-        )
-
-    def validate(self, data):
-        data["mask_length"] = self.context["prefix"].prefix_length
-        return super().validate(data)
 
 
 #
@@ -525,7 +363,6 @@ class ServiceSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     class Meta:
         model = Service
         fields = "__all__"
-        validators = []
         extra_kwargs = {
             "device": {"help_text": "Required if no virtual_machine is specified"},
             "virtual_machine": {"help_text": "Required if no device is specified"},
@@ -535,12 +372,3 @@ class ServiceSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
         # `device`.
         # list_display_fields = ["name", "parent", "protocol", "ports", "description"]
         list_display_fields = ["name", "device", "protocol", "ports", "description"]
-
-    def validate(self, data):
-        if data.get("device"):
-            validator = UniqueTogetherValidator(queryset=Service.objects.all(), fields=("name", "device"))
-            validator(data, self)
-        if data.get("virtual_machine"):
-            validator = UniqueTogetherValidator(queryset=Service.objects.all(), fields=("name", "virtual_machine"))
-            validator(data, self)
-        return super().validate(data)

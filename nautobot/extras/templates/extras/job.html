@@ -67,9 +67,7 @@
                                 <strong>Job Data</strong>
                             </div>
                             <div class="panel-body">
-                                {% block job_form %}
-                                    {% render_form job_form excluded_fields="[]" %}
-                                {% endblock %}
+                                {% render_form job_form excluded_fields="[]" %}
                             </div>
                             {% if job_model.has_sensitive_variables %}
                                 <div class="panel-footer">
@@ -85,9 +83,7 @@
                                 <strong>Job Execution</strong>
                             </div>
                             <div class="panel-body">
-                                {% block schedule_form %}
-                                    {% render_form schedule_form %}
-                                {% endblock %}
+                                {% render_form schedule_form %}
                             </div>
                             {% if job_model.approval_required %}
                                 <div class="panel-footer">

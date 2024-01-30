@@ -2,7 +2,8 @@ from nautobot.core.api.routers import OrderedDefaultRouter
 
 from . import views
 
-router = OrderedDefaultRouter(view_name="Tenancy")
+router = OrderedDefaultRouter()
+router.APIRootView = views.TenancyRootView
 
 # Tenants
 router.register("tenant-groups", views.TenantGroupViewSet)

@@ -2,7 +2,6 @@ import datetime
 import logging
 import math
 
-from django.contrib.contenttypes.models import ContentType
 import factory
 import faker
 
@@ -83,6 +82,7 @@ class VRFFactory(PrimaryModelFactory):
         model = VRF
         exclude = (
             "has_description",
+            "has_rd",
             "has_tenant",
         )
 
@@ -91,10 +91,8 @@ class VRFFactory(PrimaryModelFactory):
 
     # RD needs to be globally unique, but the random route-distinguisher generation space is large enough that
     # we'll deal with collisions as and when they occur.
-    # TODO Need to figure out a way to guarantee uniqueness on the VRF model, as namespace <-> rd combination composite key
-    # is not guaranteed to be unique since rd is nullable.
-    # Making rd not nullable on the randomly generated data to pass test_composite_key() uniqueness test here.
-    rd = factory.LazyFunction(random_route_distinguisher)
+    has_rd = NautobotBoolIterator()
+    rd = factory.Maybe("has_rd", factory.LazyFunction(random_route_distinguisher), None)
 
     has_tenant = factory.Faker("boolean", chance_of_getting_true=75)
     tenant = factory.Maybe("has_tenant", random_instance(Tenant), None)
@@ -173,9 +171,9 @@ class VLANFactory(PrimaryModelFactory):
         exclude = (
             "has_description",
             "has_vlan_group",
+            "has_location",
             "has_role",
             "has_tenant",
-            "has_location",
         )
 
     # TODO: VID and name do not need to be globally unique, but must be unique within a group (if any)
@@ -195,12 +193,12 @@ class VLANFactory(PrimaryModelFactory):
                         f"{o.vid:04d}",  # "0001" rather than "1", for more consistent names
                         faker.Faker().word(part_of_speech="adjective"),
                         o.vlan_group,  # may be None
+                        o.location,  # may be None
                     ),
                 )
             ]
         )[:255]  # truncate to max VLAN.name length just to be safe
     )
-    has_location = NautobotBoolIterator()
 
     status = random_instance(lambda: Status.objects.get_for_model(VLAN), allow_null=False)
     has_role = NautobotBoolIterator()
@@ -216,26 +214,25 @@ class VLANFactory(PrimaryModelFactory):
     has_vlan_group = NautobotBoolIterator()
     vlan_group = factory.Maybe("has_vlan_group", random_instance(VLANGroup, allow_null=False), None)
 
+    has_location = NautobotBoolIterator()
+    location = factory.Maybe(
+        "has_vlan_group",
+        factory.LazyAttribute(lambda vlan: vlan.vlan_group.location),
+        factory.Maybe("has_location", random_instance(Location, allow_null=False), None),
+    )
+
     has_tenant = NautobotBoolIterator()
     tenant = factory.Maybe("has_tenant", random_instance(Tenant), None)
-
-    @factory.post_generation
-    def locations(self, create, extracted, **kwargs):
-        if create:
-            if extracted:
-                self.locations.set(extracted)
-            else:
-                vlan_ct = ContentType.objects.get_for_model(VLAN)
-                self.locations.set(
-                    get_random_instances(
-                        lambda: Location.objects.filter(location_type__content_types__in=[vlan_ct]), minimum=0
-                    )
-                )
 
 
 class VLANGetOrCreateFactory(VLANFactory):
     class Meta:
-        django_get_or_create = ("vlan_group", "tenant")
+        django_get_or_create = ("vlan_group", "location", "tenant")
+
+    vlan_group = factory.SubFactory(
+        VLANGroupGetOrCreateFactory,
+        location=factory.SelfAttribute("..location"),
+    )
 
 
 class VRFGetOrCreateFactory(VRFFactory):
@@ -280,7 +277,7 @@ class PrefixFactory(PrimaryModelFactory):
     class Params:
         has_date_allocated = NautobotBoolIterator()
         has_description = NautobotBoolIterator()
-        has_locations = NautobotBoolIterator()
+        has_location = NautobotBoolIterator()
         has_rir = NautobotBoolIterator()
         has_role = NautobotBoolIterator()
         has_tenant = NautobotBoolIterator()
@@ -294,6 +291,10 @@ class PrefixFactory(PrimaryModelFactory):
         UniqueFaker("ipv4", network=True),
     )
     description = factory.Maybe("has_description", factory.Faker("text", max_nb_chars=200), "")
+    # TODO: create a LocationGetOrCreateFactory to get or create a location
+    location = factory.Maybe(
+        "has_location", random_instance(lambda: Location.objects.get_for_model(Prefix), allow_null=False), None
+    )
     role = factory.Maybe(
         "has_role",
         random_instance(lambda: Role.objects.get_for_model(Prefix), allow_null=False),
@@ -306,6 +307,7 @@ class PrefixFactory(PrimaryModelFactory):
         "has_vlan",
         factory.SubFactory(
             VLANGetOrCreateFactory,
+            location=factory.SelfAttribute("..location"),
             tenant=factory.SelfAttribute("..tenant"),
         ),
         None,
@@ -319,19 +321,6 @@ class PrefixFactory(PrimaryModelFactory):
     # )
     rir = factory.Maybe("has_rir", random_instance(RIR, allow_null=False), None)
     date_allocated = factory.Maybe("has_date_allocated", factory.Faker("date_time", tzinfo=datetime.timezone.utc), None)
-
-    @factory.post_generation
-    def locations(self, create, extracted, **kwargs):
-        if create:
-            if extracted:
-                self.locations.set(extracted)
-            else:
-                prefix_ct = ContentType.objects.get_for_model(Prefix)
-                self.locations.set(
-                    get_random_instances(
-                        lambda: Location.objects.filter(location_type__content_types__in=[prefix_ct]), minimum=0
-                    )
-                )
 
     @factory.post_generation
     def children(self, create, extracted, **kwargs):
@@ -411,12 +400,13 @@ class PrefixFactory(PrimaryModelFactory):
             else:
                 child_type = PrefixTypeChoices.TYPE_POOL
 
-            # Create child prefixes, preserving is_ipv6 from parent
+            # Create child prefixes, preserving location, vrf and is_ipv6 from parent
             for count, address in enumerate(self.prefix.subnet(child_cidr)):
                 if count == child_count:
                     break
                 method(
                     prefix=str(address.cidr),
+                    location=self.location,
                     is_ipv6=is_ipv6,
                     has_rir=False,
                     namespace=self.namespace,

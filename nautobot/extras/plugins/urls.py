@@ -8,23 +8,15 @@ from nautobot.extras.plugins.utils import import_object
 from . import views
 
 # Initialize URL base, API, and admin URL patterns for plugins
-apps_patterns = [
-    path("installed-apps/", views.InstalledAppsView.as_view(), name="apps_list"),
-    path("installed-apps/<str:app>/", views.InstalledAppDetailView.as_view(), name="app_detail"),
-]
-plugin_patterns = [  # 3.0 TODO: remove these
-    path("installed-plugins/", views.InstalledAppsView.as_view(), name="plugins_list"),
-    path("installed-plugins/<str:plugin>/", views.InstalledAppDetailView.as_view(), name="plugin_detail"),
-]
-apps_api_patterns = [
-    path("", views.AppsAPIRootView.as_view(), name="api-root"),
-    path("installed-apps/", views.InstalledAppsAPIView.as_view(), name="apps-list"),
+plugin_patterns = [
+    path("installed-plugins/", views.InstalledPluginsView.as_view(), name="plugins_list"),
+    path("installed-plugins/<str:plugin>/", views.InstalledPluginDetailView.as_view(), name="plugin_detail"),
 ]
 plugin_api_patterns = [
-    path("", views.AppsAPIRootView.as_view(), name="api-root"),
+    path("", views.PluginsAPIRootView.as_view(), name="api-root"),
     path(
         "installed-plugins/",
-        views.InstalledAppsAPIView.as_view(),
+        views.InstalledPluginsAPIView.as_view(),
         name="plugins-list",
     ),
 ]

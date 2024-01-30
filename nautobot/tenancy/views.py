@@ -19,7 +19,6 @@ from .models import Tenant, TenantGroup
 class TenantGroupListView(generic.ObjectListView):
     queryset = TenantGroup.objects.annotate(tenant_count=count_related(Tenant, "tenant_group"))
     filterset = filters.TenantGroupFilterSet
-    filterset_form = forms.TenantGroupFilterForm
     table = tables.TenantGroupTable
 
 
@@ -41,7 +40,9 @@ class TenantGroupView(generic.ObjectView):
         }
         RequestConfig(request, paginate).configure(tenant_table)
 
-        return {"tenant_table": tenant_table, **super().get_extra_context(request, instance)}
+        return {
+            "tenant_table": tenant_table,
+        }
 
 
 class TenantGroupEditView(generic.ObjectEditView):
@@ -53,7 +54,7 @@ class TenantGroupDeleteView(generic.ObjectDeleteView):
     queryset = TenantGroup.objects.all()
 
 
-class TenantGroupBulkImportView(generic.BulkImportView):  # 3.0 TODO: remove, unused
+class TenantGroupBulkImportView(generic.BulkImportView):
     queryset = TenantGroup.objects.all()
     table = tables.TenantGroupTable
 
@@ -99,7 +100,9 @@ class TenantView(generic.ObjectView):
             "cluster_count": Cluster.objects.restrict(request.user, "view").filter(tenant=instance).count(),
         }
 
-        return {"stats": stats, **super().get_extra_context(request, instance)}
+        return {
+            "stats": stats,
+        }
 
 
 class TenantEditView(generic.ObjectEditView):
@@ -112,7 +115,7 @@ class TenantDeleteView(generic.ObjectDeleteView):
     queryset = Tenant.objects.all()
 
 
-class TenantBulkImportView(generic.BulkImportView):  # 3.0 TODO: remove, unused
+class TenantBulkImportView(generic.BulkImportView):
     queryset = Tenant.objects.all()
     table = tables.TenantTable
 

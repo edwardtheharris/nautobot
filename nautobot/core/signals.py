@@ -1,15 +1,11 @@
 """Custom signals and handlers for the core Nautobot application."""
-
-import contextlib
 from functools import wraps
 import inspect
 import logging
 
 from django.contrib.auth.signals import user_logged_in, user_logged_out
-from django.core.cache import cache
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver, Signal
-import redis.exceptions
 
 nautobot_database_ready = Signal()
 """
@@ -68,8 +64,5 @@ def invalidate_max_depth_cache(sender, **kwargs):
     """Clear the appropriate TreeManager.max_depth cache as the create/update/delete may have changed the tree."""
     from nautobot.core.models.tree_queries import TreeManager
 
-    if not isinstance(sender.objects, TreeManager):
-        return
-
-    with contextlib.suppress(redis.exceptions.ConnectionError):
-        cache.delete(sender.objects.max_depth_cache_key)
+    if isinstance(sender.objects, TreeManager) and hasattr(sender.objects, "max_depth"):
+        del sender.objects.max_depth

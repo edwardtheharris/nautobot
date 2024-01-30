@@ -32,7 +32,7 @@
         </tr>
         <tr>
             <td>Duration</td>
-            <td>
+            <td id="pending-result-loader">
             {% if result.date_done %}
                 {{ result.duration }}
             {% else %}
@@ -42,13 +42,9 @@
         </tr>
         <tr>
             <td>Return Value</td>
-            <td>
+            <td id="pending-result-loader">
             {% if result.date_done %}
-                {% if result.result %}
-                    <pre>{{ result.result | render_json }}</pre>
-                {% else %}
-                    {{ result.result | placeholder }}
-                {% endif %}
+                {{ result.result | placeholder }}
             {% else %}
                 <img src="{% static 'img/ajax-loader.gif' %}">
             {% endif %}

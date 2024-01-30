@@ -5,11 +5,10 @@ class IPAMConfig(NautobotConfig):
     name = "nautobot.ipam"
     verbose_name = "IPAM"
     searchable_models = [
-        "ipaddress",
-        "namespace",
-        "prefix",
-        "vlan",
         "vrf",
+        "prefix",
+        "ipaddress",
+        "vlan",
     ]
 
     def ready(self):

@@ -2,7 +2,8 @@ from nautobot.core.api.routers import OrderedDefaultRouter
 
 from . import views
 
-router = OrderedDefaultRouter(view_name="Users")
+router = OrderedDefaultRouter()
+router.APIRootView = views.UsersRootView
 
 # Users and groups
 router.register("users", views.UserViewSet)

@@ -17,7 +17,7 @@ urlpatterns = [
     ),
     path(
         "cluster-types/import/",
-        views.ClusterTypeBulkImportView.as_view(),  # 3.0 TODO: remove, unused
+        views.ClusterTypeBulkImportView.as_view(),
         name="clustertype_import",
     ),
     path(
@@ -65,7 +65,7 @@ urlpatterns = [
     ),
     path(
         "cluster-groups/import/",
-        views.ClusterGroupBulkImportView.as_view(),  # 3.0 TODO: remove, unused
+        views.ClusterGroupBulkImportView.as_view(),
         name="clustergroup_import",
     ),
     path(
@@ -103,7 +103,7 @@ urlpatterns = [
     # Clusters
     path("clusters/", views.ClusterListView.as_view(), name="cluster_list"),
     path("clusters/add/", views.ClusterEditView.as_view(), name="cluster_add"),
-    path("clusters/import/", views.ClusterBulkImportView.as_view(), name="cluster_import"),  # 3.0 TODO: remove, unused
+    path("clusters/import/", views.ClusterBulkImportView.as_view(), name="cluster_import"),
     path("clusters/edit/", views.ClusterBulkEditView.as_view(), name="cluster_bulk_edit"),
     path(
         "clusters/delete/",
@@ -158,7 +158,7 @@ urlpatterns = [
     ),
     path(
         "virtual-machines/import/",
-        views.VirtualMachineBulkImportView.as_view(),  # 3.0 TODO: remove, unused
+        views.VirtualMachineBulkImportView.as_view(),
         name="virtualmachine_import",
     ),
     path(
@@ -219,7 +219,7 @@ urlpatterns = [
     path("interfaces/add/", views.VMInterfaceCreateView.as_view(), name="vminterface_add"),
     path(
         "interfaces/import/",
-        views.VMInterfaceBulkImportView.as_view(),  # 3.0 TODO: remove, unused
+        views.VMInterfaceBulkImportView.as_view(),
         name="vminterface_import",
     ),
     path(

@@ -33,7 +33,7 @@ class NautobotConfig(AppConfig):
     All core apps should inherit from this class instead of using AppConfig directly.
 
     Adds functionality to generate the HTML navigation menu and homepage content using `navigation.py`
-    and `homepage.py` files from installed Nautobot core applications and Apps.
+    and `homepage.py` files from installed Nautobot applications and plugins.
     """
 
     homepage_layout = "homepage.layout"
@@ -72,21 +72,6 @@ class NautobotConfig(AppConfig):
 
 
 def create_or_check_entry(grouping, record, key, path):
-    """
-    Helper function for adding and/or validating nested data in a provided dict based on a provided record.
-
-    Used in constructing the nav tab/group/item/buttons hierarchy as well as the homepage panel/group/item hierarchy.
-
-    If `key` does not exist in `grouping`, it will be populated with the `initial_dict` of the provided `record`.
-    Else, if any of the `fixed_fields` of the provided `record` conflict with the existing data in `grouping["key"]`,
-    an error message will be logged.
-
-    Args:
-        grouping (dict): The dictionary to populate or validate (e.g. the contents of `registry["nav_menu"]["tabs"]`).
-        record (HomePageBase, NavMenuBase): An object with `initial_dict` and `fixed_fields` attributes/properties.
-        key (str): The key within `grouping` to populate or validate the contents of.
-        path (str): String included in log messages for diagnosis and debugging.
-    """
     if key not in grouping:
         grouping[key] = record.initial_dict
     else:
@@ -94,8 +79,6 @@ def create_or_check_entry(grouping, record, key, path):
             if grouping[key][attr] != value:
                 logger.error("Unable to redefine %s on %s from %s to %s", attr, path, grouping[key][attr], value)
 
-    # TODO: remove?
-    # React-UI specific: recursive population/validation of `data` for NavContext -> NavGrouping -> NavItem records
     if isinstance(record, (NavContext, NavGrouping)):
         groups = record.groups if isinstance(record, NavContext) else record.items
         for item in groups:
@@ -105,69 +88,22 @@ def create_or_check_entry(grouping, record, key, path):
 
 def register_menu_items(tab_list):
     """
-    Based on the tab_list, the `registry["nav_menu"]` dictionary is created/updated to define the navbar.
+    Using the imported object a dictionary is either created or updated with objects to create
+    the navbar.
 
-    The dictionary is built from four key objects, NavMenuTab, NavMenuGroup, NavMenuItem and NavMenuButton.
-    The Django template then uses this dictionary to generate the navbar HTML.
-
-    The dictionary takes the form:
-
-    ```
-    registry = {
-        ...
-        "nav_menu": {
-            "tabs": {
-                <NavMenuTab.name>: {
-                    "weight": <NavMenuTab.weight>,
-                    "groups": {
-                        <NavMenuGroup.name>: {
-                            "weight": <NavMenuGroup.weight>,
-                            "items": {
-                                reverse(<NavMenuItem.link>): {
-                                    "name": <NavMenuItem.name>,
-                                    "weight": <NavMenuItem.weight>",
-                                    "buttons": {
-                                        <NavMenuButton.name>: {
-                                            "link": <NavMenuButton.link>,
-                                            "icon_class": <NavMenuButton.icon_class>,
-                                            "button_class": <NavMenuButton.button_class>,
-                                            "weight": <NavMenuButton.weight>,
-                                            "permissions": <NavMenuButton.permissions>,
-                                        },
-                                        ...
-                                    },
-                                    "permissions": <NavMenuItem.permissions>,
-                                },
-                                ...
-                            },
-                            "permissions": <set of permissions constructed from all contained NavMenuItems, or None>,
-                        },
-                        ...
-                    },
-                    "permissions": <set of permissions constructed from all contained NavMenuGroups, or None>,
-                },
-                ...
-            },
-        },
-        ...
-    }
-    ```
-
-    This is almost certainly overcomplicated and could do with significant refactoring at some point.
+    The dictionary is built from four key objects, NavMenuTab, NavMenuGroup, NavMenuItem and
+    NavMenuButton. The Django template then uses this dictionary to generate the navbar HTML.
     """
     for nav_tab in tab_list:
         if isinstance(nav_tab, NavMenuTab):
-            # Handle Apps that haven't been updated yet
-            if nav_tab.name == "Plugins":
-                nav_tab.name = "Apps"
-            create_or_check_entry(registry["nav_menu"]["tabs"], nav_tab, nav_tab.name, nav_tab.name)
+            create_or_check_entry(registry["nav_menu"]["tabs"], nav_tab, nav_tab.name, f"{nav_tab.name}")
 
-            tab_perms = registry["nav_menu"]["tabs"][nav_tab.name]["permissions"]
+            tab_perms = set()
             registry_groups = registry["nav_menu"]["tabs"][nav_tab.name]["groups"]
             for group in nav_tab.groups:
                 create_or_check_entry(registry_groups, group, group.name, f"{nav_tab.name} -> {group.name}")
 
-                group_perms = registry["nav_menu"]["tabs"][nav_tab.name]["groups"][group.name]["permissions"]
+                group_perms = set()
                 for item in group.items:
                     # Instead of passing the reverse url strings, we pass in the url itself initialized with args and kwargs.
                     try:
@@ -198,11 +134,7 @@ def register_menu_items(tab_list):
                         sorted(registry_buttons.items(), key=lambda kv_pair: kv_pair[1]["weight"])
                     )
 
-                    # If any item has "no" permissions required, then the group behaves likewise
-                    if group_perms is None or not item.permissions:
-                        group_perms = None
-                    else:
-                        group_perms |= set(perms for perms in item.permissions)
+                    group_perms |= set(perms for perms in item.permissions)
 
                 # Add sorted items to group registry dict
                 registry_groups[group.name]["items"] = OrderedDict(
@@ -210,19 +142,15 @@ def register_menu_items(tab_list):
                 )
                 # Add collected permissions to group
                 registry_groups[group.name]["permissions"] = group_perms
-
-                # If any group has "no" permissions required, then the tab performs likewise
-                if tab_perms is None or not group_perms:
-                    tab_perms = None
-                else:
-                    tab_perms |= group_perms
+                # Add collected permissions to tab
+                tab_perms |= group_perms
 
             # Add sorted groups to tab dict
             registry["nav_menu"]["tabs"][nav_tab.name]["groups"] = OrderedDict(
                 sorted(registry_groups.items(), key=lambda kv_pair: kv_pair[1]["weight"])
             )
             # Add collected permissions to tab dict
-            registry["nav_menu"]["tabs"][nav_tab.name]["permissions"] = tab_perms
+            registry["nav_menu"]["tabs"][nav_tab.name]["permissions"] |= tab_perms
         else:
             raise TypeError(f"Top level objects need to be an instance of NavMenuTab: {nav_tab}")
 
@@ -250,7 +178,7 @@ def register_homepage_panels(path, label, homepage_layout):
     Args:
         path (str): Absolute filesystem path to the app which defines the homepage layout;
                     typically this will be an `AppConfig.path` property
-        label (str): Label of the app which defines the homepage layout, for example `dcim` or `my_nautobot_app`
+        label (str): Label of the app which defines the homepage layout, for example `dcim` or `my_nautobot_plugin`
         homepage_layout (list): A list of HomePagePanel instances to contribute to the homepage layout.
     """
     template_path = f"{path}/templates/{label}/inc/"
@@ -351,7 +279,7 @@ class PermissionsMixin:
         """Ensure permissions."""
         if permissions is not None and not isinstance(permissions, (list, tuple)):
             raise TypeError("Permissions must be passed as a tuple or list.")
-        self.permissions = set(permissions) if permissions else None
+        self.permissions = set(permissions) if permissions else set()
 
 
 class HomePagePanel(HomePageBase, PermissionsMixin):
@@ -565,7 +493,6 @@ class NavMenuGroup(NavMenuBase, PermissionsMixin):
         return {
             "weight": self.weight,
             "items": {},
-            "permissions": set(),
         }
 
     @property
@@ -655,7 +582,8 @@ class NavMenuItem(NavMenuBase, PermissionsMixin):
 
 class NavMenuButton(NavMenuBase, PermissionsMixin):
     """
-    This class represents a button within a NavMenuItem.
+    This class represents a button within a PluginMenuItem. Note that button colors should come from
+    ButtonColorChoices.
     """
 
     @property
@@ -858,7 +786,7 @@ class NavItem(NavMenuBase, PermissionsMixin):
 
 def post_migrate_send_nautobot_database_ready(sender, app_config, signal, **kwargs):
     """
-    Send the `nautobot_database_ready` signal to all installed core apps and Apps.
+    Send the `nautobot_database_ready` signal to all installed apps and plugins.
 
     Signal handler for Django's post_migrate() signal.
     """
@@ -918,9 +846,9 @@ class CoreConfig(NautobotConfig):
         super().ready()
 
         # Register jobs last after everything else has been done.
-        from nautobot.core.celery import import_jobs
+        from nautobot.core.celery import app, import_jobs_as_celery_tasks
 
-        import_jobs()
+        import_jobs_as_celery_tasks(app, database_ready=False)
 
 
 class NautobotConstanceConfig(ConstanceConfig):
