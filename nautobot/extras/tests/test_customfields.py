@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db.models import ProtectedError
@@ -507,7 +508,8 @@ class CustomFieldDataAPITest(APITestCase):
         cls.cf_multi_select.default = ["Foo", "Bar"]
         cls.cf_multi_select.save()
 
-        cls.cf_app_field = CustomField.objects.get(key="example_app_auto_custom_field")
+        if "example_plugin" in settings.PLUGINS:
+            cls.cf_plugin_field = CustomField.objects.get(key="example_plugin_auto_custom_field")
 
         cls.statuses = Status.objects.get_for_model(Location)
 
@@ -527,8 +529,9 @@ class CustomFieldDataAPITest(APITestCase):
             cls.cf_url.key: "http://example.com/2",
             cls.cf_select.key: "Bar",
             cls.cf_multi_select.key: ["Bar", "Baz"],
-            cls.cf_app_field.key: "Custom value",
         }
+        if "example_plugin" in settings.PLUGINS:
+            cls.locations[1]._custom_field_data[cls.cf_plugin_field.key] = "Custom value"
         cls.locations[1].save()
 
     def test_get_single_object_without_custom_field_data(self):
@@ -550,8 +553,9 @@ class CustomFieldDataAPITest(APITestCase):
             "url_cf": None,
             "choice_cf": None,
             "multi_choice_cf": None,
-            "example_app_auto_custom_field": None,
         }
+        if "example_plugin" in settings.PLUGINS:
+            expected_data["example_plugin_auto_custom_field"] = None
         self.assertEqual(response.data["custom_fields"], expected_data)
 
     def test_get_single_object_with_custom_field_data(self):
@@ -596,7 +600,8 @@ class CustomFieldDataAPITest(APITestCase):
         self.assertEqual(response_cf["url_cf"], self.cf_url.default)
         self.assertEqual(response_cf["choice_cf"], self.cf_select.default)
         self.assertEqual(response_cf["multi_choice_cf"], self.cf_multi_select.default)
-        self.assertEqual(response_cf["example_app_auto_custom_field"], self.cf_app_field.default)
+        if "example_plugin" in settings.PLUGINS:
+            self.assertEqual(response_cf["example_plugin_auto_custom_field"], self.cf_plugin_field.default)
 
         # Validate database data
         location = Location.objects.get(pk=response.data["id"])
@@ -607,7 +612,8 @@ class CustomFieldDataAPITest(APITestCase):
         self.assertEqual(location.cf["url_cf"], self.cf_url.default)
         self.assertEqual(location.cf["choice_cf"], self.cf_select.default)
         self.assertEqual(location.cf["multi_choice_cf"], self.cf_multi_select.default)
-        self.assertEqual(location.cf["example_app_auto_custom_field"], self.cf_app_field.default)
+        if "example_plugin" in settings.PLUGINS:
+            self.assertEqual(location.cf["example_plugin_auto_custom_field"], self.cf_plugin_field.default)
 
     def test_create_single_object_with_values(self):
         """
@@ -625,9 +631,10 @@ class CustomFieldDataAPITest(APITestCase):
                 "url_cf": "http://example.com/2",
                 "choice_cf": "Bar",
                 "multi_choice_cf": ["Baz"],
-                "example_app_auto_custom_field": "Custom value",
             },
         }
+        if "example_plugin" in settings.PLUGINS:
+            data["custom_fields"]["example_plugin_auto_custom_field"] = "Custom value"
         url = reverse("dcim-api:location-list")
         self.add_permissions("dcim.add_location")
 
@@ -644,7 +651,10 @@ class CustomFieldDataAPITest(APITestCase):
         self.assertEqual(response_cf["url_cf"], data_cf["url_cf"])
         self.assertEqual(response_cf["choice_cf"], data_cf["choice_cf"])
         self.assertEqual(response_cf["multi_choice_cf"], data_cf["multi_choice_cf"])
-        self.assertEqual(response_cf["example_app_auto_custom_field"], data_cf["example_app_auto_custom_field"])
+        if "example_plugin" in settings.PLUGINS:
+            self.assertEqual(
+                response_cf["example_plugin_auto_custom_field"], data_cf["example_plugin_auto_custom_field"]
+            )
 
         # Validate database data
         location = Location.objects.get(pk=response.data["id"])
@@ -655,7 +665,10 @@ class CustomFieldDataAPITest(APITestCase):
         self.assertEqual(location.cf["url_cf"], data_cf["url_cf"])
         self.assertEqual(location.cf["choice_cf"], data_cf["choice_cf"])
         self.assertEqual(location.cf["multi_choice_cf"], data_cf["multi_choice_cf"])
-        self.assertEqual(location.cf["example_app_auto_custom_field"], data_cf["example_app_auto_custom_field"])
+        if "example_plugin" in settings.PLUGINS:
+            self.assertEqual(
+                location.cf["example_plugin_auto_custom_field"], data_cf["example_plugin_auto_custom_field"]
+            )
 
     def test_create_multiple_objects_with_defaults(self):
         """
@@ -696,7 +709,8 @@ class CustomFieldDataAPITest(APITestCase):
             self.assertEqual(response_cf["url_cf"], self.cf_url.default)
             self.assertEqual(response_cf["choice_cf"], self.cf_select.default)
             self.assertEqual(response_cf["multi_choice_cf"], self.cf_multi_select.default)
-            self.assertEqual(response_cf["example_app_auto_custom_field"], self.cf_app_field.default)
+            if "example_plugin" in settings.PLUGINS:
+                self.assertEqual(response_cf["example_plugin_auto_custom_field"], self.cf_plugin_field.default)
 
             # Validate database data
             location = Location.objects.get(pk=response.data[i]["id"])
@@ -707,7 +721,8 @@ class CustomFieldDataAPITest(APITestCase):
             self.assertEqual(location.cf["url_cf"], self.cf_url.default)
             self.assertEqual(location.cf["choice_cf"], self.cf_select.default)
             self.assertEqual(location.cf["multi_choice_cf"], self.cf_multi_select.default)
-            self.assertEqual(location.cf["example_app_auto_custom_field"], self.cf_app_field.default)
+            if "example_plugin" in settings.PLUGINS:
+                self.assertEqual(location.cf["example_plugin_auto_custom_field"], self.cf_plugin_field.default)
 
     def test_create_multiple_objects_with_values(self):
         """
@@ -721,8 +736,9 @@ class CustomFieldDataAPITest(APITestCase):
             "url_cf": "http://example.com/2",
             "choice_cf": "Bar",
             "multi_choice_cf": ["Foo", "Bar"],
-            "example_app_auto_custom_field": "Custom value",
         }
+        if "example_plugin" in settings.PLUGINS:
+            custom_field_data["example_plugin_auto_custom_field"] = "Custom value"
         data = (
             {
                 "name": "Location 3",
@@ -760,10 +776,11 @@ class CustomFieldDataAPITest(APITestCase):
             self.assertEqual(response_cf["url_cf"], custom_field_data["url_cf"])
             self.assertEqual(response_cf["choice_cf"], custom_field_data["choice_cf"])
             self.assertEqual(response_cf["multi_choice_cf"], custom_field_data["multi_choice_cf"])
-            self.assertEqual(
-                response_cf["example_app_auto_custom_field"],
-                custom_field_data["example_app_auto_custom_field"],
-            )
+            if "example_plugin" in settings.PLUGINS:
+                self.assertEqual(
+                    response_cf["example_plugin_auto_custom_field"],
+                    custom_field_data["example_plugin_auto_custom_field"],
+                )
 
             # Validate database data
             location = Location.objects.get(pk=response.data[i]["id"])
@@ -774,10 +791,11 @@ class CustomFieldDataAPITest(APITestCase):
             self.assertEqual(location.cf["url_cf"], custom_field_data["url_cf"])
             self.assertEqual(location.cf["choice_cf"], custom_field_data["choice_cf"])
             self.assertEqual(location.cf["multi_choice_cf"], custom_field_data["multi_choice_cf"])
-            self.assertEqual(
-                location.cf["example_app_auto_custom_field"],
-                custom_field_data["example_app_auto_custom_field"],
-            )
+            if "example_plugin" in settings.PLUGINS:
+                self.assertEqual(
+                    location.cf["example_plugin_auto_custom_field"],
+                    custom_field_data["example_plugin_auto_custom_field"],
+                )
 
     def test_update_single_object_with_values(self):
         """
@@ -807,7 +825,10 @@ class CustomFieldDataAPITest(APITestCase):
         self.assertEqual(response_cf["url_cf"], original_cfvs["url_cf"])
         self.assertEqual(response_cf["choice_cf"], original_cfvs["choice_cf"])
         self.assertEqual(response_cf["multi_choice_cf"], original_cfvs["multi_choice_cf"])
-        self.assertEqual(response_cf["example_app_auto_custom_field"], original_cfvs["example_app_auto_custom_field"])
+        if "example_plugin" in settings.PLUGINS:
+            self.assertEqual(
+                response_cf["example_plugin_auto_custom_field"], original_cfvs["example_plugin_auto_custom_field"]
+            )
 
         # Validate database data
         location.refresh_from_db()
@@ -821,7 +842,10 @@ class CustomFieldDataAPITest(APITestCase):
         self.assertEqual(location.cf["url_cf"], original_cfvs["url_cf"])
         self.assertEqual(location.cf["choice_cf"], original_cfvs["choice_cf"])
         self.assertEqual(location.cf["multi_choice_cf"], original_cfvs["multi_choice_cf"])
-        self.assertEqual(location.cf["example_app_auto_custom_field"], original_cfvs["example_app_auto_custom_field"])
+        if "example_plugin" in settings.PLUGINS:
+            self.assertEqual(
+                location.cf["example_plugin_auto_custom_field"], original_cfvs["example_plugin_auto_custom_field"]
+            )
 
     def test_minimum_maximum_values_validation(self):
         url = reverse("dcim-api:location-detail", kwargs={"pk": self.locations[1].pk})
@@ -1055,7 +1079,6 @@ class CustomFieldImportTest(TestCase):
                 "cf_url",
                 "cf_select",
                 "cf_multiselect",
-                "cf_example_app_auto_custom_field",
             ],
             [
                 "Location 1",
@@ -1068,7 +1091,6 @@ class CustomFieldImportTest(TestCase):
                 "http://example.com/1",
                 "Choice A",
                 "Choice A",
-                "Custom value",
             ],
             [
                 "Location 2",
@@ -1081,10 +1103,14 @@ class CustomFieldImportTest(TestCase):
                 "http://example.com/2",
                 "Choice B",
                 '"Choice A,Choice B"',
-                "Another custom value",
             ],
-            ["Location 3", "Test Root", location_status.name, "", "", "", "", "", "", "", ""],
+            ["Location 3", "Test Root", location_status.name, "", "", "", "", "", "", ""],
         )
+        if "example_plugin" in settings.PLUGINS:
+            data[0].append("cf_example_plugin_auto_custom_field")
+            data[1].append("Custom value")
+            data[2].append("Another custom value")
+            data[3].append("")
         csv_data = "\n".join(",".join(row) for row in data)
         response = self.client.post(reverse("dcim:location_import"), {"csv_data": csv_data})
         self.assertEqual(response.status_code, 200)
@@ -1094,7 +1120,10 @@ class CustomFieldImportTest(TestCase):
             location1 = Location.objects.get(name="Location 1")
         except Location.DoesNotExist:
             self.fail(str(response.content))
-        self.assertEqual(len(location1.cf), 8)
+        if "example_plugin" in settings.PLUGINS:
+            self.assertEqual(len(location1.cf), 8)
+        else:
+            self.assertEqual(len(location1.cf), 7)
         self.assertEqual(location1.cf["text"], "ABC")
         self.assertEqual(location1.cf["integer"], 123)
         self.assertEqual(location1.cf["boolean"], True)
@@ -1102,11 +1131,15 @@ class CustomFieldImportTest(TestCase):
         self.assertEqual(location1.cf["url"], "http://example.com/1")
         self.assertEqual(location1.cf["select"], "Choice A")
         self.assertEqual(location1.cf["multiselect"], ["Choice A"])
-        self.assertEqual(location1.cf["example_app_auto_custom_field"], "Custom value")
+        if "example_plugin" in settings.PLUGINS:
+            self.assertEqual(location1.cf["example_plugin_auto_custom_field"], "Custom value")
 
         # Validate data for location 2
         location2 = Location.objects.get(name="Location 2")
-        self.assertEqual(len(location2.cf), 8)
+        if "example_plugin" in settings.PLUGINS:
+            self.assertEqual(len(location2.cf), 8)
+        else:
+            self.assertEqual(len(location2.cf), 7)
         self.assertEqual(location2.cf["text"], "DEF")
         self.assertEqual(location2.cf["integer"], 456)
         self.assertEqual(location2.cf["boolean"], False)
@@ -1114,7 +1147,8 @@ class CustomFieldImportTest(TestCase):
         self.assertEqual(location2.cf["url"], "http://example.com/2")
         self.assertEqual(location2.cf["select"], "Choice B")
         self.assertEqual(location2.cf["multiselect"], ["Choice A", "Choice B"])
-        self.assertEqual(location2.cf["example_app_auto_custom_field"], "Another custom value")
+        if "example_plugin" in settings.PLUGINS:
+            self.assertEqual(location2.cf["example_plugin_auto_custom_field"], "Another custom value")
 
         # No custom field data should be set for location 3
         location3 = Location.objects.get(name="Location 3")
@@ -1899,7 +1933,10 @@ class CustomFieldChoiceTest(ModelTestCases.BaseModelTestCase):
 
     def test_custom_choice_deleted_with_field(self):
         self.cf.delete()
-        self.assertEqual(CustomField.objects.count(), 1)  # custom field automatically added by the Example App
+        if "example_plugin" in settings.PLUGINS:
+            self.assertEqual(CustomField.objects.count(), 1)  # custom field automatically added by the plugin
+        else:
+            self.assertEqual(CustomField.objects.count(), 0)
         self.assertEqual(CustomFieldChoice.objects.count(), 0)
 
     def test_regex_validation(self):

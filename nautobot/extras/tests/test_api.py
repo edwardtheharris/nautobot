@@ -1020,16 +1020,16 @@ class GitRepositoryTest(APIViewTestCases.APIViewTestCase):
         response = self.client.post(url, format="json", **self.header)
         self.assertHttpStatus(response, status.HTTP_200_OK)
 
-    def test_create_with_app_provided_contents(self):
-        """Test that `provided_contents` published by an App works."""
+    def test_create_with_plugin_provided_contents(self):
+        """Test that `provided_contents` published by a plugin works."""
         self.add_permissions("extras.add_gitrepository")
         self.add_permissions("extras.change_gitrepository")
         url = self._get_list_url()
         data = {
-            "name": "app_test",
-            "slug": "app_test",
-            "remote_url": "https://localhost/app-test",
-            "provided_contents": ["example_app.textfile"],
+            "name": "plugin_test",
+            "slug": "plugin_test",
+            "remote_url": "https://localhost/plugin-test",
+            "provided_contents": ["example_plugin.textfile"],
         }
         response = self.client.post(url, data, format="json", **self.header)
         self.assertHttpStatus(response, status.HTTP_201_CREATED)

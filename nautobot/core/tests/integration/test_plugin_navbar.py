@@ -1,8 +1,16 @@
+from unittest import skipIf
+
+from django.conf import settings
+
 from nautobot.core.choices import ButtonActionColorChoices, ButtonActionIconChoices
 from nautobot.core.testing.integration import SeleniumTestCase
 
 
-class AppNavBarTestCase(SeleniumTestCase):
+@skipIf(
+    "example_plugin" not in settings.PLUGINS,
+    "example_plugin not in settings.PLUGINS",
+)
+class PluginNavBarTestCase(SeleniumTestCase):
     """Integration test the navigation menu."""
 
     fixtures = ["user-data.json"]
@@ -10,7 +18,7 @@ class AppNavBarTestCase(SeleniumTestCase):
         "Example Menu": {
             "Example Group 1": {
                 "Example Model": {
-                    "permission": "example_app.view_examplemodel",
+                    "permission": "example_plugin.view_examplemodel",
                     "buttons": ["Add"],
                 },
             },
@@ -28,7 +36,7 @@ class AppNavBarTestCase(SeleniumTestCase):
             },
             "Example Circuit Group": {
                 "Example Model": {
-                    "permission": "example_app.view_examplemodel",
+                    "permission": "example_plugin.view_examplemodel",
                     "buttons": ["Add"],
                 },
             },
@@ -42,11 +50,11 @@ class AppNavBarTestCase(SeleniumTestCase):
         "Plugins": {
             "Example Nautobot App": {
                 "Models": {
-                    "permission": "example_app.view_examplemodel",
+                    "permission": "example_plugin.view_examplemodel",
                     "buttons": ["Add a new example model"],
                 },
                 "Other Models": {
-                    "permission": "example_app.view_examplemodel",
+                    "permission": "example_plugin.view_examplemodel",
                     "buttons": [],
                 },
             },
@@ -61,9 +69,9 @@ class AppNavBarTestCase(SeleniumTestCase):
         self.logout()
         super().tearDown()
 
-    def test_app_navbar_new_tab(self):
+    def test_plugin_navbar_new_tab(self):
         """
-        Verify that a new menu tab defined and populated by the example app is rendered properly.
+        Verify that a new menu tab defined and populated by the example plugin is rendered properly.
         """
         # Set test user to admin
         self.user.is_superuser = True
@@ -82,9 +90,9 @@ class AppNavBarTestCase(SeleniumTestCase):
         item_xpath = f"{tab_xpath}/following-sibling::ul//li[.//a[normalize-space()='Example Model']]"
         group.find_by_xpath(item_xpath)
 
-    def test_app_navbar_modify_circuits(self):
+    def test_plugin_navbar_modify_circuits(self):
         """
-        Verify that the example app is able to add a new group and items to an existing menu tab.
+        Verify that the example plugin is able to add a new group and items to an existing menu tab.
         """
         # Set test user to admin
         self.user.is_superuser = True
@@ -114,9 +122,9 @@ class AppNavBarTestCase(SeleniumTestCase):
 
         tab.click()
 
-    def test_app_navbar_plugins_tab(self):
+    def test_plugin_navbar_plugin_tab(self):
         """
-        Test that old-style app menu definitions are correctly rendered to the Plugins menu tab.
+        Test that old-style plugin menu definitions are correctly rendered to the Plugins menu tab.
         """
         # Set test user to admin
         self.user.is_superuser = True
