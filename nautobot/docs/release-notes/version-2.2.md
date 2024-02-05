@@ -20,7 +20,6 @@ Controller models have been added to the `dcim` app. A Controller in Nautobot is
 
 For more details, refer to the user guide for a [`Controller` model](../user-guide/core-data-model/dcim/controller.md), a [`ControllerManagedDeviceGroup` model](../user-guide/core-data-model/dcim/controllermanageddevicegroup.md), or developer documentation for [Controllers](../development/core/controllers.md).
 
-<<<<<<< HEAD
 #### DeviceFamily Model ([#3559](https://github.com/nautobot/nautobot/issues/3559))
 
 A [Device Family](../user-guide/core-data-model/dcim/devicefamily.md) represents a group of related [Device Types](../user-guide/core-data-model/dcim/devicetype.md). A Device Type can be optionally assigned to a Device Family. Each Device Family must have a unique name and may have a description assigned to it.
@@ -40,11 +39,6 @@ New models have been added for Software Image Files and Software Versions. These
 Software Versions must be associated to a Platform. Software Image Files must be associated to one Software Version and may be associated to one or more Device Types. Devices, Inventory Items and Virtual Machines may be associated to one Software Version to track their current version. See the documentation for [Software Image File](../user-guide/core-data-model/dcim/softwareimagefile.md) and [Software Version](../user-guide/core-data-model/dcim/softwareversion.md). There is also a [user guide](../user-guide/feature-guides/software-image-files-and-versions.md) with instructions on how to create these models.
 
 #### Syntax Highlighting ([#5098](https://github.com/nautobot/nautobot/issues/5098))
-=======
-VLAN model has undergone modifications related to the `location` field. The primary change involves replacing the `location` field(ForeignKey), with a new `locations` field(ManyToManyField). To ensure backwards compatibility with pre-2.2 versions, the original location field has been retained as a `@property` field. Users can continue to interact with the location field in a manner consistent with previous versions.
-
-#### Syntax highlighting ([#5098](https://github.com/nautobot/nautobot/issues/5098))
->>>>>>> 674299205 (feature: implement graphql, json, xml and yaml syntax highlighting (#5176))
 
 Language syntax highlighting for GraphQL, JSON, XML and YAML is now supported in the UI via JavaScript. To enable the feature, a code snippet has to be wrapped in the following HTML structure:
 
@@ -53,7 +47,6 @@ Language syntax highlighting for GraphQL, JSON, XML and YAML is now supported in
 ```
 
 [`render_json`](../user-guide/platform-functionality/template-filters.md#render_json) and [`render_yaml`](../user-guide/platform-functionality/template-filters.md#render_yaml) template filters default to this new behavior with an optional opt-out `syntax_highlight=False` arg.
-<<<<<<< HEAD
 
 ### Changed
 
@@ -483,5 +476,3 @@ Model CharFields' `max_length` attributes have been standardized globally to hav
 - [#5248](https://github.com/nautobot/nautobot/issues/5248) - Updated development dependencies including `coverage`, `django-debug-toolbar`, `factory-boy`, `mkdocs-material`, `mkdocstrings`, `mkdocstrings-python`, `pylint`, `rich`, `ruff`, `selenium`, `splinter`, `towncrier`, `watchdog`, and `yamllint` to their latest available versions.
 - [#5272](https://github.com/nautobot/nautobot/issues/5272) - Fixed incorrectly set return urls on the edit and delete buttons of job tile view.
 - [#5352](https://github.com/nautobot/nautobot/issues/5352) - Renamed `HardwareFamily` to `DeviceFamily`.
-=======
->>>>>>> 674299205 (feature: implement graphql, json, xml and yaml syntax highlighting (#5176))

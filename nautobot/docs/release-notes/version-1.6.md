@@ -72,6 +72,192 @@ The default Python version for Nautobot Docker images has been changed from 3.7 
 As Python 3.7 has reached end-of-life, Nautobot 1.6 and later do not support installation or operation under Python 3.7.
 
 <!-- towncrier release notes start -->
+## v1.6.23 (2024-05-28)
+
+### Security
+
+- [#5762](https://github.com/nautobot/nautobot/issues/5762) - Fixed missing member object permission enforcement (e.g., enforce Device permissions for a Dynamic Group containing Devices) when viewing Dynamic Group member objects in the UI or REST API ([GHSA-qmjf-wc2h-6x3q](https://github.com/nautobot/nautobot/security/advisories/GHSA-qmjf-wc2h-6x3q)).
+- [#5740](https://github.com/nautobot/nautobot/issues/5740) - Updated `requests` to `2.32.1` to address [GHSA-9wx4-h78v-vm56](https://github.com/psf/requests/security/advisories/GHSA-9wx4-h78v-vm56). This is not a direct dependency so it will not auto-update when upgrading Nautobot. Please be sure to update your local environment.
+
+### Housekeeping
+
+- [#5740](https://github.com/nautobot/nautobot/issues/5740) - Updated test dependency `requests` to `~2.32.1`.
+
+## v1.6.22 (2024-05-13)
+
+### Security
+
+- [#1858](https://github.com/nautobot/nautobot/issues/1858) - Added sanitization of HTML tags in the content of `BANNER_TOP`, `BANNER_BOTTOM`, and `BANNER_LOGIN` configuration to prevent against potential injection of malicious scripts (stored XSS) via these features ([GHSA-r2hr-4v48-fjv3](https://github.com/nautobot/nautobot/security/advisories/GHSA-r2hr-4v48-fjv3)).
+
+### Added
+
+- [#1858](https://github.com/nautobot/nautobot/issues/1858) - Added support in `BRANDING_FILEPATHS` configuration to specify a custom `css` and/or `javascript` file to be added to Nautobot page content.
+- [#1858](https://github.com/nautobot/nautobot/issues/1858) - Added Markdown support to the `BANNER_TOP`, `BANNER_BOTTOM`, and `BANNER_LOGIN` configuration settings.
+
+### Fixed
+
+- [#2974](https://github.com/nautobot/nautobot/issues/2974) - Fixed an error when deleting and then recreating a GitRepository that provides Jobs.
+
+## v1.6.21 (2024-05-07)
+
+### Security
+
+- [#5521](https://github.com/nautobot/nautobot/issues/5521) - Updated `Pillow` dependency to `~10.3.0` to address `CVE-2024-28219`.
+- [#5561](https://github.com/nautobot/nautobot/issues/5561) - Updated `idna` to `3.7` due to `CVE-2024-3651`. This is not a direct dependency so will not auto-update when upgrading. Please be sure to upgrade your local environment.
+- [#5624](https://github.com/nautobot/nautobot/issues/5624) - Updated `social-auth-app-django` dependency to `~5.4.1` to address `CVE-2024-32879`.
+- [#5675](https://github.com/nautobot/nautobot/issues/5675) - Updated `Jinja2` dependency to `3.1.4` to address `CVE-2024-34064`.
+
+## v1.6.20 (2024-04-30)
+
+### Security
+
+- [#5647](https://github.com/nautobot/nautobot/issues/5647) - Fixed a reflected-XSS vulnerability ([GHSA-jxgr-gcj5-cqqg](https://github.com/nautobot/nautobot/security/advisories/GHSA-jxgr-gcj5-cqqg)) in object-list view rendering of user-provided query parameters.
+
+### Fixed
+
+- [#5626](https://github.com/nautobot/nautobot/issues/5626) - Increased performance of `brief=true` in API endpoints by eliminating unnecessary database joins.
+
+## v1.6.19 (2024-04-23)
+
+### Security
+
+- [#5579](https://github.com/nautobot/nautobot/issues/5579) - Updated `sqlparse` to `0.5.0` to fix [GHSA-2m57-hf25-phgg](https://github.com/advisories/GHSA-2m57-hf25-phgg). This is not a direct dependency so it will not auto-update when upgrading Nautobot. Please be sure to update your local environment.
+
+### Fixed
+
+- [#5610](https://github.com/nautobot/nautobot/issues/5610) - Fixed static media failure on `/graphql/` and `/admin/` pages.
+
+## v1.6.18 (2024-04-15)
+
+### Security
+
+- [#5543](https://github.com/nautobot/nautobot/issues/5543) - Updated `jquery-ui` to version `1.13.2` due to `CVE-2022-31160`.
+
+### Dependencies
+
+- [#5543](https://github.com/nautobot/nautobot/issues/5543) - Updated `jquery` to version `3.7.1`.
+
+## v1.6.17 (2024-04-01)
+
+### Dependencies
+
+- [#4583](https://github.com/nautobot/nautobot/issues/4583) - Updated pinned version of `social-auth-core` to remove dependency on `python-jose` & its dependency on `ecdsa`.
+- [#5495](https://github.com/nautobot/nautobot/issues/5495) - Changed `jsonschema` version constraint from `>=4.7.0,<4.18.0` to `^4.7.0`.
+
+## v1.6.16 (2024-03-25)
+
+### Security
+
+- [#5450](https://github.com/nautobot/nautobot/issues/5450) - Updated `django` to `~3.2.25` due to `CVE-2024-27351`.
+- [#5465](https://github.com/nautobot/nautobot/issues/5465) - Added requirement for user authentication to access the endpoint `/extras/job-results/<uuid:pk>/log-table/`; furthermore it will not allow an authenticated user to view log entries for a JobResult they don't otherwise have permission to view. ([GHSA-m732-wvh2-7cq4](https://github.com/nautobot/nautobot/security/advisories/GHSA-m732-wvh2-7cq4))
+- [#5465](https://github.com/nautobot/nautobot/issues/5465) - Added narrower permissions enforcement on the endpoints `/extras/git-repositories/<str:slug>/sync/` and `/extras/git-repositories/<str:slug>/dry-run/`; a user who has `change` permissions for a subset of Git repositories is no longer permitted to sync or dry-run other repositories for which they lack the appropriate permissions. ([GHSA-m732-wvh2-7cq4](https://github.com/nautobot/nautobot/security/advisories/GHSA-m732-wvh2-7cq4))
+- [#5465](https://github.com/nautobot/nautobot/issues/5465) - Added narrower permissions enforcement on the `/api/dcim/connected-device/?peer_device=...&?peer_interface=...` REST API endpoint; a user who has `view` permissions for a subset of interfaces is no longer permitted to query other interfaces for which they lack permissions. ([GHSA-m732-wvh2-7cq4](https://github.com/nautobot/nautobot/security/advisories/GHSA-m732-wvh2-7cq4))
+- [#5465](https://github.com/nautobot/nautobot/issues/5465) - Added narrower permissions enforcement on all `<app>/<model>/<lookup>/notes/` UI endpoints; a user must now have the appropriate `extras.view_note` permissions to view existing notes. ([GHSA-m732-wvh2-7cq4](https://github.com/nautobot/nautobot/security/advisories/GHSA-m732-wvh2-7cq4))
+- [#5465](https://github.com/nautobot/nautobot/issues/5465) - Added requirement for user authentication to access the REST API endpoints `/api/redoc/`, `/api/swagger/`, `/api/swagger.json`, and `/api/swagger.yaml`. ([GHSA-m732-wvh2-7cq4](https://github.com/nautobot/nautobot/security/advisories/GHSA-m732-wvh2-7cq4))
+- [#5465](https://github.com/nautobot/nautobot/issues/5465) - Added requirement for user authentication to access the `/api/graphql` REST API endpoint, even when `EXEMPT_VIEW_PERMISSIONS` is configured. ([GHSA-m732-wvh2-7cq4](https://github.com/nautobot/nautobot/security/advisories/GHSA-m732-wvh2-7cq4))
+- [#5465](https://github.com/nautobot/nautobot/issues/5465) - Added requirement for user authentication to access the endpoints `/dcim/racks/<uuid>/dynamic-groups/`, `/dcim/devices/<uuid>/dynamic-groups/`, `/ipam/prefixes/<uuid>/dynamic-groups/`, `/ipam/ip-addresses/<uuid>/dynamic-groups/`, `/virtualization/clusters/<uuid>/dynamic-groups/`, and `/virtualization/virtual-machines/<uuid>/dynamic-groups/`, even when `EXEMPT_VIEW_PERMISSIONS` is configured. ([GHSA-m732-wvh2-7cq4](https://github.com/nautobot/nautobot/security/advisories/GHSA-m732-wvh2-7cq4))
+- [#5465](https://github.com/nautobot/nautobot/issues/5465) - Added requirement for user authentication to access the endpoint `/extras/secrets/provider/<str:provider_slug>/form/`. ([GHSA-m732-wvh2-7cq4](https://github.com/nautobot/nautobot/security/advisories/GHSA-m732-wvh2-7cq4))
+
+### Added
+
+- [#5465](https://github.com/nautobot/nautobot/issues/5465) - Added `nautobot.apps.utils.get_url_for_url_pattern` and `nautobot.apps.utils.get_url_patterns` lookup functions.
+- [#5465](https://github.com/nautobot/nautobot/issues/5465) - Added `nautobot.apps.views.GenericView` base class.
+
+### Changed
+
+- [#5465](https://github.com/nautobot/nautobot/issues/5465) - Added support for `view_name` and `view_description` optional parameters when instantiating a `nautobot.apps.api.OrderedDefaultRouter`. Specifying these parameters is to be preferred over defining a custom `APIRootView` subclass when defining App API URLs.
+- [#5465](https://github.com/nautobot/nautobot/issues/5465) - Added requirement for user authentication by default on the `nautobot.core.api.AuthenticatedAPIRootView` class. As a consequence, viewing the browsable REST API root endpoints (e.g. `/api/`, `/api/circuits/`, `/api/dcim/`, etc.) now requires user authentication.
+- [#5465](https://github.com/nautobot/nautobot/issues/5465) - Added requirement for user authentication to access `/api/docs/` and `/graphql/` even when `HIDE_RESTRICTED_UI` is False.
+
+### Fixed
+
+- [#5465](https://github.com/nautobot/nautobot/issues/5465) - Fixed a 500 error when accessing any of the `/dcim/<port-type>/<uuid>/connect/<termination_b_type>/` view endpoints with an invalid/nonexistent `termination_b_type` string.
+
+### Documentation
+
+- [#5465](https://github.com/nautobot/nautobot/issues/5465) - Updated example views in the App developer documentation to include `ObjectPermissionRequiredMixin` or `LoginRequiredMixin` as appropriate best practices.
+
+### Housekeeping
+
+- [#5465](https://github.com/nautobot/nautobot/issues/5465) - Updated custom views in the `example_plugin` to use the new `GenericView` base class as a best practice.
+
+## v1.6.15 (2024-03-18)
+
+### Added
+
+- [#1102](https://github.com/nautobot/nautobot/issues/1102) - Added `CELERY_BEAT_HEARTBEAT_FILE` settings variable.
+- [#5424](https://github.com/nautobot/nautobot/issues/5424) - Added `TemplateExtension.list_buttons()` API, allowing apps to register button content to be injected into object list views.
+
+### Fixed
+
+- [#5247](https://github.com/nautobot/nautobot/issues/5247) - Fixed Job buttons do not respect the `task_queues` of the job class.
+- [#5354](https://github.com/nautobot/nautobot/issues/5354) - Fixed Configuration Context not applied based on nested Tenant Groups.
+
+### Housekeeping
+
+- [#1102](https://github.com/nautobot/nautobot/issues/1102) - Added health check for Celery Beat based on it touching a file (by default `/tmp/nautobot_celery_beat_heartbeat`) each time its scheduler wakes up.
+- [#5434](https://github.com/nautobot/nautobot/issues/5434) - Fixed health check for beat container in `docker-compose.yml` under `docker-compose` v1.x.
+
+## v1.6.14 (2024-03-05)
+
+### Fixed
+
+- [#5387](https://github.com/nautobot/nautobot/issues/5387) - Fixed an error in the Dockerfile that resulted in `pyuwsgi` being installed without SSL support.
+
+## v1.6.13 (2024-03-04)
+
+### Added
+
+### Added
+
+- [#4247](https://github.com/nautobot/nautobot/issues/4247) - Added a check to the `nautobot-server pre_migrate` command to identify Interfaces and VMInterfaces with multiple VRFs through IPAddress relationships.
+
+### Fixed
+
+- [#5307](https://github.com/nautobot/nautobot/issues/5307) - Fixed Custom Field form field(s) missing from git repository edit form.
+- [#5336](https://github.com/nautobot/nautobot/issues/5336) - Fixed 'docker-compose: command not found' error when running invoke commands.
+- [#5345](https://github.com/nautobot/nautobot/issues/5345) - Fixed intermittent 405 errors when using the Docker image with SAML authentication.
+
+### Documentation
+
+- [#5345](https://github.com/nautobot/nautobot/issues/5345) - Added a note to the Nautobot installation documentation about the need to do `pip3 install --no-binary=pyuwsgi` in order to have SSL support in `pyuwsgi`.
+- [#5345](https://github.com/nautobot/nautobot/issues/5345) - Added a note to the SSO documentation about the need to do `pip3 install --no-binary=lxml` to avoid incompatibilities between `lxml` and `xmlsec` packages.
+
+## v1.6.12 (2024-02-20)
+
+### Added
+
+- [#5104](https://github.com/nautobot/nautobot/issues/5104) - Added User Token as permission constraints.
+
+### Security
+
+- [#5251](https://github.com/nautobot/nautobot/issues/5251) - Updated `Django` dependency to 3.2.24 due to CVE-2024-24680.
+
+### Changed
+
+- [#5254](https://github.com/nautobot/nautobot/issues/5254) - Changed `TreeQuerySet.ancestors` implementation to a more efficient approach for shallow trees.
+- [#5254](https://github.com/nautobot/nautobot/issues/5254) - Changed the location detail view not to annotate tree fields on its queries.
+
+### Fixed
+
+- [#5253](https://github.com/nautobot/nautobot/issues/5253) - Fixed issue with Job Button Groups displaying when Conditional Rendering should remove the button.
+- [#5261](https://github.com/nautobot/nautobot/issues/5261) - Fixed a regression introduced in v1.6.8 where Job Buttons would always run with `commit=False`.
+
+## v1.6.11 (2024-02-05)
+
+### Security
+
+- [#5151](https://github.com/nautobot/nautobot/issues/5151) - Updated `pillow` dependency to 10.2.0 due to CVE-2023-50447.
+
+### Added
+
+- [#5169](https://github.com/nautobot/nautobot/issues/5169) - Added support for user session profiling via django-silk.
+
+### Fixed
+
+- [#3664](https://github.com/nautobot/nautobot/issues/3664) - Fixed AssertionError when querying Date type custom fields in GraphQL.
+- [#5162](https://github.com/nautobot/nautobot/issues/5162) - Fixed incorrect rack group variable in device template.
+
 ## v1.6.10 (2024-01-22)
 
 ### Security
