@@ -67,8 +67,11 @@ RUN mkdir /opt/nautobot /opt/nautobot/.cache /prom_cache /source && \
     chown -R nautobot:nautobot /opt/nautobot /prom_cache /source
 
 # Common entrypoint for all environments
-COPY docker/docker-entrypoint.sh /docker-entrypoint.sh
-ENTRYPOINT ["/docker-entrypoint.sh"]
+COPY docker/docker-entrypoint.sh /bin/docker-entrypoint.sh
+COPY nautobot/ /src
+COPY pyproject.toml /src/pyproject.toml
+COPY README.md /src/README.md
+ENTRYPOINT ["/bin/docker-entrypoint.sh"]
 
 ################################ Stage: system-dev-dependencies (intermediate build target)
 

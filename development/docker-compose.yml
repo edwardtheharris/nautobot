@@ -9,11 +9,6 @@ services:
       context: ../
       dockerfile: docker/Dockerfile
       target: dev
-    image: "local/nautobot-dev:local-py${PYTHON_VER}"
-    ports:
-      - "8080:8080"
-    volumes:
-      - media:/opt/nautobot/media
     depends_on:
       redis:
         condition: service_started
@@ -23,7 +18,6 @@ services:
         condition: service_healthy
     env_file:
       - dev.env
-    tty: true
     healthcheck:
       interval: 5s
       timeout: 5s
@@ -34,6 +28,12 @@ services:
         - "curl"
         - "-f"
         - "http://localhost:8080/health/"
+    image: "local/nautobot-dev:local-py${PYTHON_VER}"
+    ports:
+      - "8080:8080"
+    tty: true
+    volumes:
+      - media:/opt/nautobot/media
   celery_worker:
     image: "local/nautobot-dev:local-py${PYTHON_VER}"
     ports:
