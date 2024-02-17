@@ -1,7 +1,6 @@
 ---
 version: "3.9"
-volumes:
-  media_root:
+name: nautobot
 services:
   nautobot:
     build:
@@ -14,7 +13,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - media_root:/opt/nautobot/media
+      - media:/opt/nautobot/media
     depends_on:
       redis:
         condition: service_started
@@ -40,7 +39,7 @@ services:
     ports:
       - "8081:8080"
     volumes:
-      - media_root:/opt/nautobot/media
+      - media:/opt/nautobot/media
     entrypoint: "watchmedo auto-restart --directory './' --pattern '*.py' --recursive -- nautobot-server celery worker -l INFO --events"
     healthcheck:
       interval: 60s
@@ -92,13 +91,38 @@ services:
         - "4444:4444"
         - "15900:5900"
     shm_size: 2g
-  mkdocs:
-    profiles:
-      - mkdocs
-    image: "local/nautobot-dev:local-py${PYTHON_VER}"
-    entrypoint: "mkdocs serve -a '0.0.0.0:8001'"
+  db:
+    image: postgres:13
+    env_file:
+      - dev.env
+    volumes:
+      - postgres:/var/lib/postgresql/data
     healthcheck:
-      disable: true
-    tty: true
-    ports:
-      - "8001:8001"
+      test: ["CMD-SHELL", "pg_isready -d $$POSTGRES_DB -U $$POSTGRES_USER"]
+      interval: 5s
+      timeout: 5s
+      retries: 50
+volumes:
+  media:
+    driver: local
+    # driver_opts:
+    #   type: 'none'
+    #   o: 'bind'
+    #   device: ${MEDIA_VOLUME_PATH}
+  postgres:
+    driver: local
+    # driver_opts:
+    #   type: 'none'
+    #   o: 'bind'
+    #   device: ${PG_VOLUME_PATH}
+
+  # mkdocs:
+  #   profiles:
+  #     - mkdocs
+  #   image: "local/nautobot-dev:local-py${PYTHON_VER}"
+  #   entrypoint: "mkdocs serve -a '0.0.0.0:8001'"
+  #   healthcheck:
+  #     disable: true
+  #   tty: true
+  #   ports:
+  #     - "8001:8001"
