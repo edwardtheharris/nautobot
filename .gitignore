@@ -36,3 +36,4 @@ node_modules
 Pipfile*
 Vagrantfile*
 .vagrant
+nautobot_config.py

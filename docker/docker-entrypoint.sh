@@ -4,13 +4,6 @@
 # Stop when an error occures
 set -e
 
-prev_dir=$(pwd)
-mkdir -pv /src
-cd /src
-pip install -e .
-
-cd "$prev_dir"
-
 # Try to connect to the DB
 DB_WAIT_TIMEOUT=${DB_WAIT_TIMEOUT-3}
 MAX_DB_WAIT_TIME=${MAX_DB_WAIT_TIME-30}

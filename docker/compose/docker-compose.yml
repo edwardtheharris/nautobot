@@ -9,7 +9,7 @@ services:
       dockerfile: docker/Dockerfile
     depends_on:
       prometheus:
-        condition: service_healthy
+        condition: service_started
       psql:
         condition: service_healthy
       redis:
@@ -31,6 +31,9 @@ services:
     tty: true
     volumes:
       - media:/opt/nautobot/media
+      - type: bind
+        source: ./nautobot_config.py
+        target: /opt/nautobot/nautobot_config.py
   prometheus:
     healthcheck:
       test: ["CMD", "wget", "http://localhost:9090"]
@@ -38,7 +41,7 @@ services:
       timeout: 15s
       retries: 10
       start_period: 40s
-    image: ghcr.io/edwardtheharris/nautobot/prometheus:development
+    image: ghcr.io/edwardtheharris/nautobot/prometheus:2024-02-17
     ports:
       - >-
         9090:9090
@@ -52,7 +55,11 @@ services:
       timeout: 60s
       retries: 5
       start_period: 80s
-    image: postgres:13-alpine
+    image: ghcr.io/edwardtheharris/nautobot/psql:development
+    networks:
+      nautobot:
+        aliases:
+          - psql
     ports:
       - >-
         5432:5432
@@ -65,7 +72,7 @@ services:
       start_period: 1m
       retries: 3
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
-    image: redis:6-alpine
+    image: ghcr.io/edwardtheharris/nautobot/redis:2024-02-17
 networks:
   nautobot:
     driver: bridge
