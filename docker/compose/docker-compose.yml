@@ -1,0 +1,78 @@
+version: '3.9'
+name: nautobot-dev
+services:
+  nautobot:
+    build:
+      args:
+        PYTHON_VER: '3.11'
+      context: ../../
+      dockerfile: docker/Dockerfile
+    depends_on:
+      prometheus:
+        condition: service_healthy
+      psql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      interval: 5s
+      timeout: 5s
+      start_period: 5m  # it takes a WHILE to run initial migrations with an empty DB
+      retries: 3
+      test:
+        - "CMD"
+        - "curl"
+        - "-f"
+        - "http://localhost:8080/health/"
+    image: ghcr.io/edwardtheharris/nautobot/nautobot:${IMAGE_DATE}
+    ports:
+      - >-
+        8080:8080
+    tty: true
+    volumes:
+      - media:/opt/nautobot/media
+  prometheus:
+    healthcheck:
+      test: ["CMD", "wget", "http://localhost:9090"]
+      interval: 10s
+      timeout: 15s
+      retries: 10
+      start_period: 40s
+    image: ghcr.io/edwardtheharris/nautobot/prometheus:development
+    ports:
+      - >-
+        9090:9090
+    volumes:
+      - prometheus:/prometheus:rw
+  psql:
+    env_file: .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "db_prod"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
+    image: postgres:13-alpine
+    ports:
+      - >-
+        5432:5432
+    volumes:
+      - postgres:/var/lib/postgresql/data
+  redis:
+    healthcheck:
+      interval: 5s
+      timeout: 5s
+      start_period: 1m
+      retries: 3
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+    image: redis:6-alpine
+networks:
+  nautobot:
+    driver: bridge
+volumes:
+  media:
+    driver: local
+  prometheus:
+    driver: local
+  postgres:
+    driver: local
