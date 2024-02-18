@@ -25,6 +25,10 @@ services:
         - "-f"
         - "http://localhost:8080/health/"
     image: ghcr.io/edwardtheharris/nautobot/nautobot:${IMAGE_DATE}
+    networks:
+      nautobot:
+        aliases:
+          - nautobot
     ports:
       - >-
         8080:8080
@@ -44,6 +48,10 @@ services:
       retries: 10
       start_period: 40s
     image: ghcr.io/edwardtheharris/nautobot/prometheus:2024-02-17
+    networks:
+      nautobot:
+        aliases:
+          - prom
     ports:
       - >-
         9090:9090
@@ -75,6 +83,10 @@ services:
       retries: 3
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
     image: ghcr.io/edwardtheharris/nautobot/redis:2024-02-17
+    networks:
+      nautobot:
+        aliases:
+          - redis
 networks:
   nautobot:
     driver: bridge
