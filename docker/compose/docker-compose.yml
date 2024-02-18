@@ -30,7 +30,9 @@ services:
         8080:8080
     tty: true
     volumes:
-      - media:/opt/nautobot/media
+      - type: bind
+        source: ./media
+        target: /opt/nautobot/media
       - type: bind
         source: ./nautobot_config.py
         target: /opt/nautobot/nautobot_config.py

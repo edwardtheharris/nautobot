@@ -62,8 +62,8 @@ HEALTHCHECK --interval=5s --timeout=5s --start-period=5s --retries=1 CMD curl --
 
 # Generate nautobot user and its required dirs for later consumption
 RUN mkdir /opt/nautobot /opt/nautobot/.cache /prom_cache /source && \
-    groupadd --gid 999 --system nautobot && \
-    useradd --uid 999 --gid 999 --system --shell /bin/bash --create-home --home-dir /opt/nautobot nautobot && \
+    groupadd --gid 702 --system nautobot && \
+    useradd --uid 501 --gid 702 --system --shell /bin/bash --create-home --home-dir /opt/nautobot nautobot && \
     chown -R nautobot:nautobot /opt/nautobot /prom_cache /source
 
 # Common entrypoint for all environments
