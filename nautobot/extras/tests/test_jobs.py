@@ -10,6 +10,7 @@ import uuid
 from constance.test import override_config
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.core.management.base import CommandError
@@ -922,6 +923,12 @@ class JobHookTransactionTest(TransactionTestCase):  # TODO: BaseModelTestCase mi
 
     def setUp(self):
         super().setUp()
+        # Because of TransactionTestCase, and its clearing and repopulation of the database between tests,
+        # the `change_logged_models_queryset` cache of ContentTypes becomes invalid.
+        # We need to explicitly clear it here to have tests pass.
+        # This is not a problem during normal operation of Nautobot because content-types don't normally get deleted
+        # and recreated while Nautobot is running.
+        cache.delete("nautobot.extras.utils.change_logged_models_queryset")
 
         module = "job_hook_receiver"
         name = "TestJobHookReceiverLog"
