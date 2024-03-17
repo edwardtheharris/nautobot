@@ -7,8 +7,11 @@ name = "pypi"
 invoke = "*"
 nautobot = {editable = true, path = "."}
 pylint-django = "*"
+gitpython = "*"
+loguru = "*"
 
 [dev-packages]
+invoke = "*"
 
 [requires]
 python_version = "3.11"
