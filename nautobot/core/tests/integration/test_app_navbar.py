@@ -10,9 +10,11 @@ class AppNavBarTestCase(SeleniumTestCase):
         "Circuits": {
             "Circuits": {
                 "Circuits": {
+                    "permission": "circuits.view_circuit",
                     "buttons": ["Add"],
                 },
                 "Circuit Types": {
+                    "permission": "circuits.view_circuittype",
                     "buttons": ["Add"],
                 },
             },
@@ -23,6 +25,7 @@ class AppNavBarTestCase(SeleniumTestCase):
             },
             "Providers": {
                 "Providers": {
+                    "permission": "circuits.view_provider",
                     "buttons": ["Add"],
                 },
             },
@@ -65,7 +68,7 @@ class AppNavBarTestCase(SeleniumTestCase):
 
         group = tab.find_by_xpath(f"{tab_xpath}/following-sibling::ul//li[normalize-space()='Example Group 1']")
 
-        item_xpath = f"{tab_xpath}/following-sibling::ul//li[.//a[normalize-space()='Example Models']]"
+        item_xpath = f"{tab_xpath}/following-sibling::ul//li[.//a[normalize-space()='Example Model']]"
         group.find_by_xpath(item_xpath)
 
     def test_app_navbar_modify_circuits(self):
