@@ -17,6 +17,7 @@ if [ -d ./venv/ ]; then
 fi
 
 echo "Validating branch name..."
+# shellcheck disable=SC3010
 [[ $(git branch --show-current) =~ ^u/ ]] || echo "! Your branch name does not conform to the 'u/' prefix convention."
 
 echo "Check that YAML files conform to best practices..."
@@ -46,6 +47,7 @@ echo "Check static analysis via pylint..."
 invoke pylint || EXIT=1
 
 if [ $EXIT != 0 ]; then
+    # shellcheck disable=SC2059
 	printf "${RED}COMMIT FAILED${NOCOLOR}\n"
 fi
 
