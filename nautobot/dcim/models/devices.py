@@ -1,5 +1,3 @@
-from collections import OrderedDict
-
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -143,17 +141,15 @@ class DeviceType(PrimaryModel):
         self._original_rear_image = self.rear_image if self.present_in_database else None
 
     def to_yaml(self):
-        data = OrderedDict(
-            (
-                ("manufacturer", self.manufacturer.name),
-                ("model", self.model),
-                ("part_number", self.part_number),
-                ("u_height", self.u_height),
-                ("is_full_depth", self.is_full_depth),
-                ("subdevice_role", self.subdevice_role),
-                ("comments", self.comments),
-            )
-        )
+        data = {
+                "manufacturer": self.manufacturer.name,
+                "model": self.model,
+                "part_number": self.part_number,
+                "u_height": self.u_height,
+                "is_full_depth": self.is_full_depth,
+                "subdevice_role": self.subdevice_role,
+                "comments": self.comments,
+        }
 
         # Component templates
         if self.console_port_templates.exists():

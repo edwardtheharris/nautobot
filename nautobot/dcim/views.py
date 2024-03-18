@@ -1,4 +1,3 @@
-from collections import OrderedDict
 import uuid
 
 from django.contrib import messages
@@ -700,18 +699,16 @@ class DeviceTypeImportView(generic.ObjectImportView):
     ]
     queryset = DeviceType.objects.all()
     model_form = forms.DeviceTypeImportForm
-    related_object_forms = OrderedDict(
-        (
-            ("console-ports", forms.ConsolePortTemplateImportForm),
-            ("console-server-ports", forms.ConsoleServerPortTemplateImportForm),
-            ("power-ports", forms.PowerPortTemplateImportForm),
-            ("power-outlets", forms.PowerOutletTemplateImportForm),
-            ("interfaces", forms.InterfaceTemplateImportForm),
-            ("rear-ports", forms.RearPortTemplateImportForm),
-            ("front-ports", forms.FrontPortTemplateImportForm),
-            ("device-bays", forms.DeviceBayTemplateImportForm),
-        )
-    )
+    related_object_forms = {
+        "console-ports": forms.ConsolePortTemplateImportForm,
+        "console-server-ports": forms.ConsoleServerPortTemplateImportForm,
+        "power-ports": forms.PowerPortTemplateImportForm,
+        "power-outlets": forms.PowerOutletTemplateImportForm,
+        "interfaces": forms.InterfaceTemplateImportForm,
+        "rear-ports": forms.RearPortTemplateImportForm,
+        "front-ports": forms.FrontPortTemplateImportForm,
+        "device-bays": forms.DeviceBayTemplateImportForm,
+    }
 
 
 class DeviceTypeBulkEditView(generic.BulkEditView):

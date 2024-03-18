@@ -1,5 +1,4 @@
 """Jobs functionality - consolidates and replaces legacy "custom scripts" and "reports" features."""
-from collections import OrderedDict
 import functools
 import inspect
 import json
@@ -554,7 +553,7 @@ class BaseJob(Task):
     def _get_file_vars(cls):
         """Return an ordered dict of FileVar fields."""
         cls_vars = cls._get_vars()
-        file_vars = OrderedDict()
+        file_vars = {}
         for name, attr in cls_vars.items():
             if isinstance(attr, FileVar):
                 file_vars[name] = attr

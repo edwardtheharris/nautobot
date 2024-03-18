@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from datetime import date, datetime
 import json
 import logging
@@ -181,7 +180,7 @@ class CustomFieldModel(models.Model):
         fields = CustomField.objects.get_for_model(self)
         if advanced_ui is not None:
             fields = fields.filter(advanced_ui=advanced_ui)
-        return OrderedDict([(field, self.cf.get(field.key)) for field in fields])
+        return {field: self.cf.get(field.key) for field in fields}
 
     def get_custom_field_groupings_basic(self):
         """
@@ -200,7 +199,7 @@ class CustomFieldModel(models.Model):
     def get_custom_field_groupings_advanced(self):
         """
         This method exists to help call get_custom_field_groupings() in templates where a function argument (advanced_ui) cannot be specified.
-        Return a dictonary of custom fields grouped by the same grouping in the form
+        Return a dictionary of custom fields grouped by the same grouping in the form
         {
             <grouping_1>: [(cf1, <value for cf1>), (cf2, <value for cf2>), ...],
             ...
@@ -213,7 +212,7 @@ class CustomFieldModel(models.Model):
 
     def get_custom_field_groupings(self, advanced_ui=None):
         """
-        Return a dictonary of custom fields grouped by the same grouping in the form
+        Return a dictionary of custom fields grouped by the same grouping in the form
         {
             <grouping_1>: [(cf1, <value for cf1>), (cf2, <value for cf2>), ...],
             ...
