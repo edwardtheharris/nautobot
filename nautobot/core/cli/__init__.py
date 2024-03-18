@@ -148,7 +148,7 @@ def _configure_settings(config):
                 if getattr(e, "name") == "storages":
                     raise ImproperlyConfigured(
                         f"STORAGE_BACKEND is set to {settings.STORAGE_BACKEND} but django-storages is not present. It "
-                        f"can be installed by running 'pip install django-storages'."
+                        "can be installed by running 'pip install django-storages'."
                     )
                 raise e
 
