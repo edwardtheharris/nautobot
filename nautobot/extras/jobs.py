@@ -51,7 +51,7 @@ from nautobot.extras.models import (
     JobResult,
     ObjectChange,
 )
-from nautobot.extras.utils import ChangeLoggedModelsQuery, task_queues_as_choices
+from nautobot.extras.utils import change_logged_models_queryset, task_queues_as_choices
 from nautobot.ipam.formfields import IPAddressFormField, IPNetworkFormField
 from nautobot.ipam.validators import (
     MaxPrefixLengthValidator,
@@ -1221,7 +1221,7 @@ def enqueue_job_hooks(object_change):
 
     # Determine whether this type of object supports job hooks
     content_type = object_change.changed_object_type
-    if content_type not in ChangeLoggedModelsQuery().as_queryset():
+    if content_type not in change_logged_models_queryset():
         return
 
     # Retrieve any applicable job hooks
