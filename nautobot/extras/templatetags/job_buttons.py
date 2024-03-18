@@ -1,5 +1,3 @@
-from collections import OrderedDict
-
 from django import template
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
@@ -147,7 +145,7 @@ def job_buttons(context, obj):
         return SAFE_EMPTY_STR
 
     buttons_html = forms_html = SAFE_EMPTY_STR
-    group_names = OrderedDict()
+    group_names = {}
 
     for jb in buttons:
         # Organize job buttons by group for later processing
