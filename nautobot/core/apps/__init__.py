@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from collections import OrderedDict
 import logging
 import os
 
@@ -130,34 +129,34 @@ def register_menu_items(tab_list):
                         )
 
                     # Add sorted buttons to group registry dict
-                    registry_groups[group.name]["items"][item.link]["buttons"] = OrderedDict(
+                    registry_groups[group.name]["items"][item.link]["buttons"] = {
                         sorted(registry_buttons.items(), key=lambda kv_pair: kv_pair[1]["weight"])
-                    )
+                    }
 
                     group_perms |= set(perms for perms in item.permissions)
 
                 # Add sorted items to group registry dict
-                registry_groups[group.name]["items"] = OrderedDict(
+                registry_groups[group.name]["items"] = {
                     sorted(registry_groups[group.name]["items"].items(), key=lambda kv_pair: kv_pair[1]["weight"])
-                )
+                }
                 # Add collected permissions to group
                 registry_groups[group.name]["permissions"] = group_perms
                 # Add collected permissions to tab
                 tab_perms |= group_perms
 
             # Add sorted groups to tab dict
-            registry["nav_menu"]["tabs"][nav_tab.name]["groups"] = OrderedDict(
+            registry["nav_menu"]["tabs"][nav_tab.name]["groups"] = {
                 sorted(registry_groups.items(), key=lambda kv_pair: kv_pair[1]["weight"])
-            )
+            }
             # Add collected permissions to tab dict
             registry["nav_menu"]["tabs"][nav_tab.name]["permissions"] |= tab_perms
         else:
             raise TypeError(f"Top level objects need to be an instance of NavMenuTab: {nav_tab}")
 
         # Order all tabs in dict
-        registry["nav_menu"]["tabs"] = OrderedDict(
+        registry["nav_menu"]["tabs"] = {
             sorted(registry["nav_menu"]["tabs"].items(), key=lambda kv_pair: kv_pair[1]["weight"])
-        )
+        }
 
 
 def register_new_ui_menu_items(context_list):
@@ -222,24 +221,24 @@ def register_homepage_panels(path, label, homepage_layout):
                         else:
                             raise TypeError(f"Third level objects need to be an instance of HomePageItem: {group_item}")
                         panel_perms |= set(group_item.permissions)
-                    registry_items[item.name]["items"] = OrderedDict(
+                    registry_items[item.name]["items"] = {
                         sorted(registry_items[item.name]["items"].items(), key=lambda kv_pair: kv_pair[1]["weight"])
-                    )
+                    }
                 else:
                     raise TypeError(
                         f"Second level objects need to be an instance of HomePageGroup or HomePageItem: {item}"
                     )
 
-            registry_panels[panel.name]["items"] = OrderedDict(
+            registry_panels[panel.name]["items"] = {
                 sorted(registry_items.items(), key=lambda kv_pair: kv_pair[1]["weight"])
-            )
+            }
         else:
             raise TypeError(f"Top level objects need to be an instance of HomePagePanel: {panel}")
         registry_panels[panel.name]["permissions"] = panel_perms
 
-    registry["homepage_layout"]["panels"] = OrderedDict(
+    registry["homepage_layout"]["panels"] = {
         sorted(registry_panels.items(), key=lambda kv_pair: kv_pair[1]["weight"])
-    )
+    }
 
 
 class HomePageBase(ABC):

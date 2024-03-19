@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from copy import deepcopy
 import logging
 import uuid
@@ -699,8 +698,8 @@ class BaseFilterSet(django_filters.FilterSet):
     def get_fields(cls):
         fields = super().get_fields()
         if "id" not in fields and (cls._meta.exclude is None or "id" not in cls._meta.exclude):
-            # Add "id" as the first key in the `fields` OrderedDict
-            fields = OrderedDict(id=[django_filters.conf.settings.DEFAULT_LOOKUP_EXPR], **fields)
+            # Add "id" as the first key in the `fields` dict
+            fields = dict(id=[django_filters.conf.settings.DEFAULT_LOOKUP_EXPR], **fields)
         return fields
 
     @classmethod
