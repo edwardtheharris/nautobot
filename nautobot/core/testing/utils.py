@@ -1,6 +1,5 @@
 from contextlib import contextmanager
 import logging
-import random
 import re
 import string
 
@@ -9,6 +8,7 @@ from django.contrib.auth.models import Permission
 from django.db.models import Q
 from django.db.models.deletion import PROTECT
 from tree_queries.models import TreeNodeForeignKey
+import secrets
 
 # Use the proper swappable User model
 User = get_user_model()
@@ -115,5 +115,5 @@ def generate_random_device_asset_tag_of_specified_size(size):
     """
     For testing purposes only; it returns a random string of size 100 consisting of letters and numbers.
     """
-    asset_tag = "".join(random.choices(string.ascii_letters + string.digits, k=size))  # noqa: S311  # suspicious-non-cryptographic-random-usage
+    asset_tag = "".join(secrets.SystemRandom().choices(string.ascii_letters + string.digits, k=size))  # noqa: S311  # suspicious-non-cryptographic-random-usage
     return asset_tag
