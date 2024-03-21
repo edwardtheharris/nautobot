@@ -1,5 +1,6 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 Replaced the OrderedDict instance at line 21 of routers.py with a vanilla dictionary.
 =======
 Replaced `OrderedDict` instance in `nautobot/models/racks.py#275` with a plain
@@ -8,3 +9,6 @@ Replaced `OrderedDict` instance in `nautobot/models/racks.py#275` with a plain
 =======
 Replaced `OrderedDict` instance in `nautobot/models/racks.py#275` with a plain `dict` instance.
 >>>>>>> f349b52f2 (Update changes/1746.housekeeping)
+=======
+Replaced the OrderedDict instance at line 21 of routers.py with a vanilla dictionary.
+>>>>>>> f8d5fdfbd (Replace OrderedDict in routers.py (#5456))
