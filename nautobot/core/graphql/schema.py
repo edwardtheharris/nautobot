@@ -1,5 +1,4 @@
 """Schema module for GraphQL."""
-from collections import OrderedDict
 import logging
 
 from django.conf import settings
@@ -49,7 +48,7 @@ from nautobot.virtualization.graphql.types import VirtualMachineType, VMInterfac
 
 logger = logging.getLogger(__name__)
 
-registry["graphql_types"] = OrderedDict()
+registry["graphql_types"] = {}
 registry["graphql_types"]["circuits.circuittermination"] = CircuitTerminationType
 registry["graphql_types"]["contenttypes.contenttype"] = ContentTypeType
 registry["graphql_types"]["dcim.cable"] = CableType

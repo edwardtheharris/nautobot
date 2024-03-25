@@ -73,7 +73,7 @@ def generate_settings(config_template=CONFIG_TEMPLATE, **kwargs):
 
     with open(config_template) as fh:
         # We don't need autoescape=True since we control the template file
-        environment = Environment(loader=BaseLoader, keep_trailing_newline=True)  # noqa: S701  # jinja2-autoescape-false
+        environment = Environment(loader=BaseLoader, keep_trailing_newline=True, autoescape=True)  # noqa: S701  # jinja2-autoescape-false
         config = environment.from_string(fh.read())
 
     return config.render(**template_vars)
@@ -148,7 +148,7 @@ def _configure_settings(config):
                 if getattr(e, "name") == "storages":
                     raise ImproperlyConfigured(
                         f"STORAGE_BACKEND is set to {settings.STORAGE_BACKEND} but django-storages is not present. It "
-                        f"can be installed by running 'pip install django-storages'."
+                        "can be installed by running 'pip install django-storages'."
                     )
                 raise e
 
