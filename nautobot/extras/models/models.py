@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import json
 
 from db_file_storage.model_utils import delete_file, delete_file_if_needed
@@ -201,7 +202,7 @@ class ConfigContextModel(models.Model, ConfigContextSchemaValidationMixin):
                 c["data"] for c in sorted(config_context_data, key=lambda k: (k["weight"], k["name"]))
             ]
         # Compile all config data, overwriting lower-weight values with higher-weight values where a collision occurs
-        data = {}
+        data = OrderedDict()
         for context in config_context_data:
             data = deepmerge(data, context)
 

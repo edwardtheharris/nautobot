@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueTogetherValidator
@@ -214,10 +216,12 @@ class AvailablePrefixSerializer(serializers.Serializer):
     prefix = serializers.CharField(read_only=True)
 
     def to_representation(self, instance):
-        return {
-            "ip_version": instance.version,
-                "prefix": str(instance),
-        }
+        return OrderedDict(
+            [
+                ("ip_version", instance.version),
+                ("prefix", str(instance)),
+            ]
+        )
 
 
 #
@@ -307,10 +311,12 @@ class AvailableIPSerializer(serializers.Serializer):
     address = serializers.CharField(read_only=True)
 
     def to_representation(self, instance):
-        return {
-            "ip_version": self.context["prefix"].version,
-            "address": f"{instance}/{self.context['prefix'].prefixlen}",
-        }
+        return OrderedDict(
+            [
+                ("ip_version", self.context["prefix"].version),
+                ("address", f"{instance}/{self.context['prefix'].prefixlen}"),
+            ]
+        )
 
 
 #

@@ -2,7 +2,6 @@
 
 from django.test import TestCase
 
-from nautobot.core.testing.forms import FormTestCases
 from nautobot.extras.models import Status
 from nautobot.ipam import forms, models
 from nautobot.ipam.choices import IPAddressTypeChoices
@@ -64,7 +63,7 @@ class BaseNetworkFormTest:
         self.assertEqual("CIDR mask (e.g. /24) is required.", form.errors[self.field_name][0])
 
 
-class PrefixFormTest(BaseNetworkFormTest, FormTestCases.BaseFormTestCase):
+class PrefixFormTest(BaseNetworkFormTest, TestCase):
     form_class = forms.PrefixForm
     field_name = "prefix"
     object_name = "prefix"

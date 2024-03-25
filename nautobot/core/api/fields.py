@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import logging
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 # TODO: why is this not a serializers.ChoiceField subclass??
-class ChoiceField(serializers.ChoiceField):
+class ChoiceField(serializers.Field):
     """
     Represent a ChoiceField as {'value': <DB value>, 'label': <string>}. Accepts a single value on write.
 
@@ -52,7 +53,7 @@ class ChoiceField(serializers.ChoiceField):
     def to_representation(self, obj):
         if obj == "":
             return None
-        return {"value": obj, "label": self._choices[obj]}
+        return OrderedDict([("value", obj), ("label", self._choices[obj])])
 
     def to_internal_value(self, data):
         if data == "":

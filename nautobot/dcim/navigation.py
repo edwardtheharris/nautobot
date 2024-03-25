@@ -89,7 +89,7 @@ menu_items = (
                     ),
                     NavMenuItem(
                         link="dcim:rackreservation_list",
-                        name="Rack Reservations",
+                        name="Reservations",
                         weight=400,
                         permissions=[
                             "dcim.view_rackreservation",

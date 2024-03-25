@@ -1,9 +1,9 @@
+from functools import lru_cache
 import logging
 
 from django import forms
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
@@ -329,6 +329,7 @@ class RelationshipModel(models.Model):
 class RelationshipManager(BaseManager.from_queryset(RestrictedQuerySet)):
     use_in_migrations = True
 
+    @lru_cache(maxsize=128)
     def get_for_model(self, model, hidden=None):
         """
         Return all Relationships assigned to the given model.
@@ -344,6 +345,7 @@ class RelationshipManager(BaseManager.from_queryset(RestrictedQuerySet)):
             self.get_for_model_destination(model, hidden=hidden),
         )
 
+    @lru_cache(maxsize=128)
     def get_for_model_source(self, model, hidden=None):
         """
         Return all Relationships assigned to the given model for the source side only.
@@ -352,21 +354,15 @@ class RelationshipManager(BaseManager.from_queryset(RestrictedQuerySet)):
             model (Model): The django model to which relationships are registered
             hidden (bool): Filter based on the value of the hidden flag, or None to not apply this filter
         """
-        concrete_model = model._meta.concrete_model
-        cache_key = f"{self.get_for_model_source.cache_key_prefix}.{concrete_model._meta.label_lower}.{hidden}"
-        queryset = cache.get(cache_key)
-        if queryset is None:
-            content_type = ContentType.objects.get_for_model(concrete_model)
-            queryset = (
-                self.get_queryset().filter(source_type=content_type).select_related("source_type", "destination_type")
-            )  # You almost always will want access to the source_type/destination_type
-            if hidden is not None:
-                queryset = queryset.filter(source_hidden=hidden)
-            cache.set(cache_key, queryset)
-        return queryset
+        content_type = ContentType.objects.get_for_model(model._meta.concrete_model)
+        result = (
+            self.get_queryset().filter(source_type=content_type).select_related("source_type", "destination_type")
+        )  # You almost always will want access to the source_type/destination_type
+        if hidden is not None:
+            result = result.filter(source_hidden=hidden)
+        return result
 
-    get_for_model_source.cache_key_prefix = "nautobot.extras.relationship.get_for_model_source"
-
+    @lru_cache(maxsize=128)
     def get_for_model_destination(self, model, hidden=None):
         """
         Return all Relationships assigned to the given model for the destination side only.
@@ -375,22 +371,13 @@ class RelationshipManager(BaseManager.from_queryset(RestrictedQuerySet)):
             model (Model): The django model to which relationships are registered
             hidden (bool): Filter based on the value of the hidden flag, or None to not apply this filter
         """
-        concrete_model = model._meta.concrete_model
-        cache_key = f"{self.get_for_model_destination.cache_key_prefix}.{concrete_model._meta.label_lower}.{hidden}"
-        queryset = cache.get(cache_key)
-        if queryset is None:
-            content_type = ContentType.objects.get_for_model(concrete_model)
-            queryset = (
-                self.get_queryset()
-                .filter(destination_type=content_type)
-                .select_related("source_type", "destination_type")
-            )  # You almost always will want access to the source_type/destination_type
-            if hidden is not None:
-                queryset = queryset.filter(destination_hidden=hidden)
-            cache.set(cache_key, queryset)
-        return queryset
-
-    get_for_model_destination.cache_key_prefix = "nautobot.extras.relationship.get_for_model_destination"
+        content_type = ContentType.objects.get_for_model(model._meta.concrete_model)
+        result = (
+            self.get_queryset().filter(destination_type=content_type).select_related("source_type", "destination_type")
+        )  # You almost always will want access to the source_type/destination_type
+        if hidden is not None:
+            result = result.filter(destination_hidden=hidden)
+        return result
 
     def get_required_for_model(self, model):
         """

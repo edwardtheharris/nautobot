@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import socket
 
 from django.conf import settings
@@ -432,7 +433,7 @@ class DeviceViewSet(ConfigContextQuerySetMixin, NautobotModelViewSet):
             return HttpResponseForbidden()
 
         napalm_methods = request.GET.getlist("method")
-        response = {(m, None) for m in napalm_methods}
+        response = OrderedDict([(m, None) for m in napalm_methods])
 
         # Get NAPALM credentials for the device, or fall back to the legacy global NAPALM credentials
         if device.secrets_group:

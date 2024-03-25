@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -161,8 +163,13 @@ class PluginsAPIRootView(NautobotAPIVersionMixin, APIView):
                 entries.append(entry)
 
         return Response(
-            {
-                "installed-plugins": reverse("plugins-api:plugins-list", request=request, format=format),
-                "entries": entries,
-            }
+            OrderedDict(
+                (
+                    (
+                        "installed-plugins",
+                        reverse("plugins-api:plugins-list", request=request, format=format),
+                    ),
+                    *entries,
+                )
+            )
         )

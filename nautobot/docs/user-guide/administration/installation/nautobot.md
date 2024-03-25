@@ -156,8 +156,6 @@ We also want to deliberately install the `wheel` library which will tell Pip to 
 pip3 install --upgrade pip wheel
 ```
 
-By default, Pip will now install Python packages as wheels. In most cases this is desirable, however in some cases the wheel versions of packages may have been compiled with options differing from what is needed for a specific scenario. One such case presents itself here - the wheel for `pyuwsgi`, a key web server component of Nautobot, is built without SSL (HTTPS) support. This may be fine for a non-production deployment of Nautobot, such as in your lab, but for production deployments, not supporting HTTPS will not do at all. Fortunately, you can tell Pip when you don't want to use wheels for a specific package by passing the `--no-binary=<package>` CLI parameter. We'll use that below.
-
 ## Install Nautobot
 
 === "PostgreSQL (Ubuntu and RHEL Flavors)"
@@ -165,7 +163,7 @@ By default, Pip will now install Python packages as wheels. In most cases this i
     Use Pip to install Nautobot:
 
     ```no-highlight
-    pip3 install --no-binary=pyuwsgi nautobot
+    pip3 install nautobot
     ```
 
 === "MySQL (Ubuntu and RHEL Flavors)"
@@ -173,7 +171,7 @@ By default, Pip will now install Python packages as wheels. In most cases this i
     Use Pip to install Nautobot with the MySQL client:
 
     ```no-highlight
-    pip3 install --no-binary=pyuwsgi "nautobot[mysql]"
+    pip3 install "nautobot[mysql]"
     ```
 
 Great! We have `NAUTOBOT_ROOT` ready for use by the `nautobot` user, so let's proceed to verifying the installation.

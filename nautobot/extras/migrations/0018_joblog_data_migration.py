@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from django.db import migrations
 
 from nautobot.extras.choices import LogLevelChoices
@@ -44,13 +46,15 @@ data = {
 
 
 def _data_grouping_struct():
-    return {
-        "success": 0,
-        "info": 0,
-        "warning": 0,
-        "failure": 0,
-        "log": [],
-    }
+    return OrderedDict(
+        [
+            ("success", 0),
+            ("info", 0),
+            ("warning", 0),
+            ("failure", 0),
+            ("log", []),
+        ]
+    )
 
 
 def migrate_params(apps, schema_editor):

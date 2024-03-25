@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 from decimal import Decimal
 import uuid
 
@@ -15,7 +15,7 @@ def deepmerge(original, new):
     """
     Deep merge two dictionaries (new into original) and return a new dict
     """
-    merged = {original}
+    merged = OrderedDict(original)
     for key, val in new.items():
         if key in original and isinstance(original[key], dict) and isinstance(val, dict):
             merged[key] = deepmerge(original[key], val)

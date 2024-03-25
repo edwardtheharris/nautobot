@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import itertools
 import logging
 import platform
@@ -353,18 +354,48 @@ class APIRootView(NautobotAPIVersionMixin, APIView):
     @extend_schema(exclude=True)
     def get(self, request, format=None):  # pylint: disable=redefined-builtin
         return Response(
-            {
-                "circuits": reverse("circuits-api:api-root", request=request, format=format),
-                "dcim": reverse("dcim-api:api-root", request=request, format=format),
-                "extras": reverse("extras-api:api-root", request=request, format=format),
-                "graphql": reverse("graphql-api", request=request, format=format),
-                "ipam": reverse("ipam-api:api-root", request=request, format=format),
-                "plugins": reverse("plugins-api:api-root", request=request, format=format),
-                "status": reverse("api-status", request=request, format=format),
-                "tenancy": reverse("tenancy-api:api-root", request=request, format=format),
-                "users": reverse("users-api:api-root", request=request, format=format),
-                "virtualization": reverse("virtualization-api:api-root", request=request, format=format),
-            }
+            OrderedDict(
+                (
+                    (
+                        "circuits",
+                        reverse("circuits-api:api-root", request=request, format=format),
+                    ),
+                    (
+                        "dcim",
+                        reverse("dcim-api:api-root", request=request, format=format),
+                    ),
+                    (
+                        "extras",
+                        reverse("extras-api:api-root", request=request, format=format),
+                    ),
+                    ("graphql", reverse("graphql-api", request=request, format=format)),
+                    (
+                        "ipam",
+                        reverse("ipam-api:api-root", request=request, format=format),
+                    ),
+                    (
+                        "plugins",
+                        reverse("plugins-api:api-root", request=request, format=format),
+                    ),
+                    ("status", reverse("api-status", request=request, format=format)),
+                    (
+                        "tenancy",
+                        reverse("tenancy-api:api-root", request=request, format=format),
+                    ),
+                    (
+                        "users",
+                        reverse("users-api:api-root", request=request, format=format),
+                    ),
+                    (
+                        "virtualization",
+                        reverse(
+                            "virtualization-api:api-root",
+                            request=request,
+                            format=format,
+                        ),
+                    ),
+                )
+            )
         )
 
 
@@ -466,7 +497,7 @@ class NautobotSpectacularSwaggerView(APIVersioningGetSchemaURLMixin, Spectacular
             login_url = reverse(settings.LOGIN_URL)
             return redirect(f"{login_url}?next={doc_url}")
 
-        # For backward compatibility with drf-yasg, `/api/docs/?format=openapi` is a redirect to the JSON schema.
+        # For backward compatibility wtih drf-yasg, `/api/docs/?format=openapi` is a redirect to the JSON schema.
         if request.GET.get("format") == "openapi":
             return redirect("schema_json", permanent=True)
 

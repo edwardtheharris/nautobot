@@ -1,5 +1,6 @@
+from collections import OrderedDict
+
 from django import template
-from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django.utils.html import format_html
@@ -26,7 +27,6 @@ HIDDEN_INPUTS = """
 <input type="hidden" name="object_pk" value="{object_pk}">
 <input type="hidden" name="object_model_name" value="{object_model_name}">
 <input type="hidden" name="_schedule_type" value="immediately">
-<input type="hidden" name="_task_queue" value="{task_queue}">
 <input type="hidden" name="_return_url" value="{redirect_path}">
 """
 
@@ -105,17 +105,12 @@ def _render_job_button_for_obj(job_button, obj, context, content_type):
 
     # Disable buttons if the user doesn't have permission to run the underlying Job.
     has_run_perm = Job.objects.check_perms(context["user"], instance=job_button.job, action="run")
-    try:
-        _task_queue = job_button.job.task_queues[0]
-    except IndexError:
-        _task_queue = settings.CELERY_TASK_DEFAULT_QUEUE
     hidden_inputs = format_html(
         HIDDEN_INPUTS,
         csrf_token=context["csrf_token"],
         object_pk=obj.pk,
         object_model_name=f"{content_type.app_label}.{content_type.model}",
         redirect_path=context["request"].path,
-        task_queue=_task_queue,
     )
     template_args = {
         "button_id": job_button.pk,
@@ -152,7 +147,7 @@ def job_buttons(context, obj):
         return SAFE_EMPTY_STR
 
     buttons_html = forms_html = SAFE_EMPTY_STR
-    group_names = {}
+    group_names = OrderedDict()
 
     for jb in buttons:
         # Organize job buttons by group for later processing

@@ -1,6 +1,5 @@
 from django.test import TestCase
 
-from nautobot.core.testing.forms import FormTestCases
 from nautobot.dcim.choices import DeviceFaceChoices, InterfaceTypeChoices, RackWidthChoices
 from nautobot.dcim.forms import DeviceFilterForm, DeviceForm, InterfaceCreateForm, RackForm
 from nautobot.dcim.models import (
@@ -18,9 +17,7 @@ from nautobot.tenancy.models import Tenant
 from nautobot.virtualization.models import Cluster, ClusterGroup, ClusterType
 
 
-class DeviceTestCase(FormTestCases.BaseFormTestCase):
-    form_class = DeviceForm
-
+class DeviceTestCase(TestCase):
     def setUp(self):
         self.device_status = Status.objects.get_for_model(Device).first()
 

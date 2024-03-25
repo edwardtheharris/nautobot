@@ -1,4 +1,5 @@
 """Jobs functionality - consolidates and replaces legacy "custom scripts" and "reports" features."""
+from collections import OrderedDict
 import functools
 import inspect
 import json
@@ -51,7 +52,7 @@ from nautobot.extras.models import (
     JobResult,
     ObjectChange,
 )
-from nautobot.extras.utils import change_logged_models_queryset, task_queues_as_choices
+from nautobot.extras.utils import ChangeLoggedModelsQuery, task_queues_as_choices
 from nautobot.ipam.formfields import IPAddressFormField, IPNetworkFormField
 from nautobot.ipam.validators import (
     MaxPrefixLengthValidator,
@@ -553,7 +554,7 @@ class BaseJob(Task):
     def _get_file_vars(cls):
         """Return an ordered dict of FileVar fields."""
         cls_vars = cls._get_vars()
-        file_vars = {}
+        file_vars = OrderedDict()
         for name, attr in cls_vars.items():
             if isinstance(attr, FileVar):
                 file_vars[name] = attr
@@ -1221,7 +1222,7 @@ def enqueue_job_hooks(object_change):
 
     # Determine whether this type of object supports job hooks
     content_type = object_change.changed_object_type
-    if content_type not in change_logged_models_queryset():
+    if content_type not in ChangeLoggedModelsQuery().as_queryset():
         return
 
     # Retrieve any applicable job hooks
