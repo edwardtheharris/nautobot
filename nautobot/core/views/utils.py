@@ -1,5 +1,6 @@
 import datetime
 from io import BytesIO
+import urllib.parse
 
 from django.contrib import messages
 from django.core.exceptions import FieldError, ValidationError
@@ -113,6 +114,7 @@ def get_csv_form_fields_from_serializer_class(serializer_class):
                 field_info = {
                     "name": cf.add_prefix_to_cf_key(),
                     "required": cf_form_field.required,
+                    "foreign_key": False,
                     "label": cf_form_field.label,
                     "help_text": cf_form_field.help_text,
                 }
@@ -131,6 +133,7 @@ def get_csv_form_fields_from_serializer_class(serializer_class):
         field_info = {
             "name": field_name,
             "required": field.required,
+            "foreign_key": False,
             "label": field.label,
             "help_text": field.help_text,
         }
@@ -148,12 +151,14 @@ def get_csv_form_fields_from_serializer_class(serializer_class):
             elif isinstance(field.child_relation, ContentTypeField):
                 field_info["format"] = mark_safe('<code>"app_label.model,app_label.model"</code>')  # noqa: S308
             else:
-                field_info["format"] = mark_safe('<code>"UUID,UUID"</code>')  # noqa: S308
+                field_info["foreign_key"] = field.child_relation.queryset.model._meta.label_lower
+                field_info["format"] = mark_safe('<code>"UUID,UUID"</code> or combination of fields')  # noqa: S308
         elif isinstance(field, serializers.RelatedField):
             if isinstance(field, ContentTypeField):
                 field_info["format"] = mark_safe("<code>app_label.model</code>")  # noqa: S308
             else:
-                field_info["format"] = mark_safe("<code>UUID</code>")  # noqa: S308
+                field_info["foreign_key"] = field.queryset.model._meta.label_lower
+                field_info["format"] = mark_safe("<code>UUID</code> or combination of fields")  # noqa: S308
         elif isinstance(field, (serializers.ListField, serializers.MultipleChoiceField)):
             field_info["format"] = mark_safe('<code>"value,value"</code>')  # noqa: S308
         elif isinstance(field, (serializers.DictField, serializers.JSONField)):
@@ -210,11 +215,28 @@ def handle_protectederror(obj_list, request, e):
         protected_count,
     )
 
+    # Format objects based on whether they have a detail view/absolute url
+    objects_with_absolute_url = []
+    objects_without_absolute_url = []
     # Append dependent objects to error message
+    for dependent in protected_objects[:50]:
+        try:
+            dependent.get_absolute_url()
+            objects_with_absolute_url.append(dependent)
+        except AttributeError:
+            objects_without_absolute_url.append(dependent)
+
     err_message += format_html_join(
         ", ",
         '<a href="{}">{}</a>',
-        ((dependent.get_absolute_url(), dependent) for dependent in protected_objects[:50]),
+        ((dependent.get_absolute_url(), dependent) for dependent in objects_with_absolute_url),
+    )
+    if objects_with_absolute_url and objects_without_absolute_url:
+        err_message += format_html(", ")
+    err_message += format_html_join(
+        ", ",
+        "<span>{}</span>",
+        ((dependent,) for dependent in objects_without_absolute_url),
     )
 
     messages.error(request, err_message)
@@ -265,7 +287,7 @@ def prepare_cloned_fields(instance):
         for tag in instance.tags.all():
             params.append(("tags", tag.pk))
 
-    # Concatenate parameters into a URL query string
-    param_string = "&".join([f"{k}={v}" for k, v in params])
+    # Encode the parameters into a URL query string
+    param_string = urllib.parse.urlencode(params)
 
     return param_string

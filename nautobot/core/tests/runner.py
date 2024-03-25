@@ -1,11 +1,34 @@
+import copy
+import hashlib
+
 from django.conf import settings
 from django.core.management import call_command
 from django.db import connections
-from django.test.runner import DiscoverRunner
-from django.test.utils import get_unique_databases_and_mirrors, NullTimeKeeper
+from django.db.migrations.recorder import MigrationRecorder
+from django.test.runner import _init_worker, DiscoverRunner, ParallelTestSuite
+from django.test.utils import get_unique_databases_and_mirrors, NullTimeKeeper, override_settings
 import yaml
 
 from nautobot.core.celery import app, setup_nautobot_job_logging
+from nautobot.core.settings_funcs import parse_redis_connection
+
+
+def init_worker_with_unique_cache(counter):
+    """Extend Django's default parallel unit test setup to also ensure distinct Redis caches."""
+    _init_worker(counter)  # call Django default to set _worker_id and set up parallel DB instances
+    # _worker_id is now 1, 2, 3, 4, etc.
+
+    from django.test.runner import _worker_id
+
+    # Redis DB indices 0 and 1 are used by non-automated testing, so we want to start at index 2
+    caches = copy.deepcopy(settings.CACHES)
+    caches["default"]["LOCATION"] = parse_redis_connection(redis_database=_worker_id + 1)
+    override_settings(CACHES=caches).enable()
+    print(f"Set settings.CACHES['default']['LOCATION'] to use Redis index {_worker_id + 1}")
+
+
+class NautobotParallelTestSuite(ParallelTestSuite):
+    init_worker = init_worker_with_unique_cache
 
 
 class NautobotTestRunner(DiscoverRunner):
@@ -21,6 +44,8 @@ class NautobotTestRunner(DiscoverRunner):
 
     Only integration tests that DO NOT inherit from `SeleniumTestCase` will need to be explicitly tagged.
     """
+
+    parallel_test_suite = NautobotParallelTestSuite
 
     exclude_tags = ["integration"]
 
@@ -90,6 +115,14 @@ class NautobotTestRunner(DiscoverRunner):
                             command += ["--seed", settings.TEST_FACTORY_SEED]
                         if self.cache_test_fixtures:
                             command += ["--cache-test-fixtures"]
+                            # Use the list of applied migrations as a unique hash to keep fixtures from differing
+                            # branches/releases of Nautobot in separate files.
+                            hexdigest = hashlib.shake_128(
+                                ",".join(
+                                    sorted(f"{m.app}.{m.name}" for m in MigrationRecorder.Migration.objects.all())
+                                ).encode("utf-8")
+                            ).hexdigest(10)
+                            command += ["--fixture-file", f"development/factory_dump.{hexdigest}.json"]
                         with time_keeper.timed(f'  Pre-populating test database "{alias}" with factory data...'):
                             db_command = [*command, "--database", alias]
                             call_command(*db_command)

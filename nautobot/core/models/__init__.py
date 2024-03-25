@@ -1,6 +1,7 @@
 import uuid
 
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import FieldDoesNotExist
@@ -45,7 +46,16 @@ class BaseModel(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, unique=True, editable=False)
 
+    # Reverse relation so that deleting a BaseModel automatically deletes any ContactAssociations related to it.
+    associated_contacts = GenericRelation(
+        "extras.ContactAssociation",
+        content_type_field="associated_object_type",
+        object_id_field="associated_object_id",
+        related_query_name="associated_contacts_%(app_label)s_%(class)s",  # e.g. 'associated_contacts_dcim_device'
+    )
+
     objects = BaseManager.from_queryset(RestrictedQuerySet)()
+    is_contact_associable_model = True
 
     class Meta:
         abstract = True
@@ -94,7 +104,7 @@ class BaseModel(models.Model):
 
         Necessary for use with _content_type_cached and management commands.
         """
-        return f"{cls._meta.label_lower}._content_type"
+        return f"nautobot.{cls._meta.label_lower}._content_type"
 
     @classproperty  # https://github.com/PyCQA/pylint-django/issues/240
     def _content_type_cached(cls):  # pylint: disable=no-self-argument
