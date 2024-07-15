@@ -21,7 +21,7 @@ from nautobot.core.utils.permissions import get_permission_for_model
 from nautobot.core.views import generic, mixins as view_mixins
 from nautobot.core.views.paginator import EnhancedPaginator, get_paginate_count
 from nautobot.core.views.utils import handle_protectederror
-from nautobot.dcim.models import Device, Interface
+from nautobot.dcim.models import Device, Interface, Location
 from nautobot.extras.models import Role, Status, Tag
 from nautobot.ipam import choices, constants
 from nautobot.ipam.api import serializers
@@ -71,7 +71,7 @@ class NamespaceUIViewSet(
     view_mixins.ObjectEditViewMixin,
     view_mixins.ObjectDestroyViewMixin,
     view_mixins.ObjectChangeLogViewMixin,
-    view_mixins.ObjectBulkCreateViewMixin,
+    view_mixins.ObjectBulkCreateViewMixin,  # 3.0 TODO: remove, no longer used
     view_mixins.ObjectBulkDestroyViewMixin,
     view_mixins.ObjectBulkUpdateViewMixin,
     view_mixins.ObjectNotesViewMixin,
@@ -80,6 +80,7 @@ class NamespaceUIViewSet(
     form_class = forms.NamespaceForm
     bulk_update_form_class = forms.NamespaceBulkEditForm
     filterset_class = filters.NamespaceFilterSet
+    filterset_form_class = forms.NamespaceFilterForm
     queryset = Namespace.objects.all()
     serializer_class = serializers.NamespaceSerializer
     table_class = tables.NamespaceTable
@@ -292,7 +293,7 @@ class VRFDeleteView(generic.ObjectDeleteView):
     queryset = VRF.objects.all()
 
 
-class VRFBulkImportView(generic.BulkImportView):
+class VRFBulkImportView(generic.BulkImportView):  # 3.0 TODO: remove, unused
     queryset = VRF.objects.all()
     table = tables.VRFTable
 
@@ -302,6 +303,12 @@ class VRFBulkEditView(generic.BulkEditView):
     filterset = filters.VRFFilterSet
     table = tables.VRFTable
     form = forms.VRFBulkEditForm
+
+    def extra_post_save_action(self, obj, form):
+        if form.cleaned_data.get("add_prefixes", None):
+            obj.prefixes.add(*form.cleaned_data["add_prefixes"])
+        if form.cleaned_data.get("remove_prefixes", None):
+            obj.prefixes.remove(*form.cleaned_data["remove_prefixes"])
 
 
 class VRFBulkDeleteView(generic.BulkDeleteView):
@@ -332,6 +339,7 @@ class RouteTargetView(generic.ObjectView):
         return {
             "importing_vrfs_table": importing_vrfs_table,
             "exporting_vrfs_table": exporting_vrfs_table,
+            **super().get_extra_context(request, instance),
         }
 
 
@@ -344,7 +352,7 @@ class RouteTargetDeleteView(generic.ObjectDeleteView):
     queryset = RouteTarget.objects.all()
 
 
-class RouteTargetBulkImportView(generic.BulkImportView):
+class RouteTargetBulkImportView(generic.BulkImportView):  # 3.0 TODO: remove, unused
     queryset = RouteTarget.objects.all()
     table = tables.RouteTargetTable
 
@@ -389,9 +397,7 @@ class RIRView(generic.ObjectView):
         }
         RequestConfig(request, paginate).configure(assigned_prefix_table)
 
-        return {
-            "assigned_prefix_table": assigned_prefix_table,
-        }
+        return {"assigned_prefix_table": assigned_prefix_table, **super().get_extra_context(request, instance)}
 
 
 class RIREditView(generic.ObjectEditView):
@@ -403,7 +409,7 @@ class RIRDeleteView(generic.ObjectDeleteView):
     queryset = RIR.objects.all()
 
 
-class RIRBulkImportView(generic.BulkImportView):
+class RIRBulkImportView(generic.BulkImportView):  # 3.0 TODO: remove, unused
     queryset = RIR.objects.all()
     table = tables.RIRTable
 
@@ -424,7 +430,7 @@ class PrefixListView(generic.ObjectListView):
     filterset_form = forms.PrefixFilterForm
     table = tables.PrefixDetailTable
     template_name = "ipam/prefix_list.html"
-    queryset = Prefix.objects.all()
+    queryset = Prefix.objects.annotate(location_count=count_related(Location, "prefixes"))
     use_new_ui = True
 
 
@@ -433,17 +439,21 @@ class PrefixView(generic.ObjectView):
         "parent",
         "rir",
         "role",
-        "location",
         "status",
         "tenant__tenant_group",
         "vlan__vlan_group",
         "namespace",
-    )
+    ).prefetch_related("locations")
     use_new_ui = True
 
     def get_extra_context(self, request, instance):
         # Parent prefixes table
-        parent_prefixes = instance.ancestors().restrict(request.user, "view").select_related("parent", "namespace")
+        parent_prefixes = (
+            instance.ancestors()
+            .restrict(request.user, "view")
+            .select_related("parent", "namespace", "status", "vlan", "role")
+            .annotate(location_count=count_related(Location, "prefixes"))
+        )
         parent_prefix_table = tables.PrefixTable(list(parent_prefixes))
         parent_prefix_table.exclude = ("namespace",)
 
@@ -453,6 +463,7 @@ class PrefixView(generic.ObjectView):
         return {
             "vrf_table": vrf_table,
             "parent_prefix_table": parent_prefix_table,
+            **super().get_extra_context(request, instance),
         }
 
 
@@ -465,7 +476,8 @@ class PrefixPrefixesView(generic.ObjectView):
         child_prefixes = (
             instance.descendants()
             .restrict(request.user, "view")
-            .select_related("parent", "location", "status", "role", "vlan", "namespace")
+            .select_related("parent", "status", "role", "vlan", "namespace")
+            .annotate(location_count=count_related(Location, "prefixes"))
         )
 
         # Add available prefixes to the table if requested
@@ -690,20 +702,34 @@ class PrefixDeleteView(generic.ObjectDeleteView):
     template_name = "ipam/prefix_delete.html"
 
 
-class PrefixBulkImportView(generic.BulkImportView):
+class PrefixBulkImportView(generic.BulkImportView):  # 3.0 TODO: remove, unused
     queryset = Prefix.objects.all()
     table = tables.PrefixTable
 
 
 class PrefixBulkEditView(generic.BulkEditView):
-    queryset = Prefix.objects.select_related("location", "status", "namespace", "tenant", "vlan", "role")
+    queryset = Prefix.objects.select_related("status", "namespace", "tenant", "vlan", "role").annotate(
+        location_count=count_related(Location, "prefixes")
+    )
     filterset = filters.PrefixFilterSet
     table = tables.PrefixTable
     form = forms.PrefixBulkEditForm
 
+    def extra_post_save_action(self, obj, form):
+        if form.cleaned_data.get("add_locations", None):
+            obj.locations.add(*form.cleaned_data["add_locations"])
+        if form.cleaned_data.get("remove_locations", None):
+            obj.locations.remove(*form.cleaned_data["remove_locations"])
+        if form.cleaned_data.get("add_vrfs", None):
+            obj.vrfs.add(*form.cleaned_data["add_vrfs"])
+        if form.cleaned_data.get("remove_vrfs", None):
+            obj.vrfs.remove(*form.cleaned_data["remove_vrfs"])
+
 
 class PrefixBulkDeleteView(generic.BulkDeleteView):
-    queryset = Prefix.objects.select_related("location", "status", "namespace", "tenant", "vlan", "role")
+    queryset = Prefix.objects.select_related("status", "namespace", "tenant", "vlan", "role").annotate(
+        location_count=count_related(Location, "prefixes")
+    )
     filterset = filters.PrefixFilterSet
     table = tables.PrefixTable
 
@@ -735,7 +761,10 @@ class IPAddressView(generic.ObjectView):
     def get_extra_context(self, request, instance):
         # Parent prefixes table
         parent_prefixes = (
-            instance.ancestors().restrict(request.user, "view").select_related("location", "status", "role", "tenant")
+            instance.ancestors()
+            .restrict(request.user, "view")
+            .select_related("status", "role", "tenant")
+            .annotate(location_count=count_related(Location, "prefixes"))
         )
         parent_prefixes_table = tables.PrefixTable(list(parent_prefixes), orderable=False)
 
@@ -762,6 +791,7 @@ class IPAddressView(generic.ObjectView):
         return {
             "parent_prefixes_table": parent_prefixes_table,
             "related_ips_table": related_ips_table,
+            **super().get_extra_context(request, instance),
         }
 
 
@@ -775,7 +805,7 @@ class IPAddressEditView(generic.ObjectEditView):
             _, error_msg = retrieve_interface_or_vminterface_from_request(request)
             if error_msg:
                 messages.warning(request, error_msg)
-                return redirect(self.get_return_url(request), default_return_url="ipam:ipaddress_add")
+                return redirect(self.get_return_url(request, default_return_url="ipam:ipaddress_add"))
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -858,17 +888,17 @@ class IPAddressAssignView(view_mixins.GetReturnURLMixin, generic.ObjectView):
     """
 
     queryset = IPAddress.objects.all()
-    default_return_url = "ipam:ipaddress_add"
 
     def dispatch(self, request, *args, **kwargs):
-        # Redirect user if an interface has not been provided
-        if "interface" not in request.GET and "vminterface" not in request.GET:
-            return redirect(self.get_return_url(request))
+        if request.user.is_authenticated:
+            # Redirect user if an interface has not been provided
+            if "interface" not in request.GET and "vminterface" not in request.GET:
+                return redirect(self.get_return_url(request, default_return_url="ipam:ipaddress_add"))
 
-        _, error_msg = retrieve_interface_or_vminterface_from_request(request)
-        if error_msg:
-            messages.warning(request, error_msg)
-            return redirect(self.get_return_url(request))
+            _, error_msg = retrieve_interface_or_vminterface_from_request(request)
+            if error_msg:
+                messages.warning(request, error_msg)
+                return redirect(self.get_return_url(request, default_return_url="ipam:ipaddress_add"))
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -973,7 +1003,9 @@ class IPAddressMergeView(view_mixins.GetReturnURLMixin, view_mixins.ObjectPermis
         # Check if there are at least two IP addresses for us to merge
         # and if the skip button is pressed instead.
         if "_skip" not in request.POST and not operation_invalid:
-            with cache.lock("ipaddress_merge", blocking_timeout=15, timeout=settings.REDIS_LOCK_TIMEOUT):
+            with cache.lock(
+                "nautobot.ipam.views.ipaddress_merge", blocking_timeout=15, timeout=settings.REDIS_LOCK_TIMEOUT
+            ):
                 with transaction.atomic():
                     namespace = Namespace.objects.get(pk=merged_attributes.get("namespace"))
                     status = Status.objects.get(pk=merged_attributes.get("status"))
@@ -1091,7 +1123,7 @@ class IPAddressBulkCreateView(generic.BulkCreateView):
     template_name = "ipam/ipaddress_bulk_add.html"
 
 
-class IPAddressBulkImportView(generic.BulkImportView):
+class IPAddressBulkImportView(generic.BulkImportView):  # 3.0 TODO: remove, unused
     queryset = IPAddress.objects.all()
     table = tables.IPAddressTable
 
@@ -1171,7 +1203,7 @@ class IPAddressVMInterfacesView(generic.ObjectView):
 #
 
 
-class IPAddressToInterfaceUIViewSet(view_mixins.ObjectBulkCreateViewMixin):
+class IPAddressToInterfaceUIViewSet(view_mixins.ObjectBulkCreateViewMixin):  # 3.0 TODO: use ObjectListViewMixin instead
     """
     ViewSet for IP Address (VM)Interface assignments.
 
@@ -1210,6 +1242,7 @@ class VLANGroupView(generic.ObjectView):
     def get_extra_context(self, request, instance):
         vlans = (
             VLAN.objects.restrict(request.user, "view")
+            .annotate(location_count=count_related(Location, "vlans"))
             .filter(vlan_group=instance)
             .prefetch_related(Prefetch("prefixes", queryset=Prefix.objects.restrict(request.user)))
         )
@@ -1219,7 +1252,6 @@ class VLANGroupView(generic.ObjectView):
         vlan_table = tables.VLANDetailTable(vlans)
         if request.user.has_perm("ipam.change_vlan") or request.user.has_perm("ipam.delete_vlan"):
             vlan_table.columns.show("pk")
-        vlan_table.columns.hide("location")
         vlan_table.columns.hide("vlan_group")
 
         paginate = {
@@ -1241,6 +1273,7 @@ class VLANGroupView(generic.ObjectView):
             "vlan_table": vlan_table,
             "permissions": permissions,
             "vlans_count": vlans_count,
+            **super().get_extra_context(request, instance),
         }
 
 
@@ -1253,7 +1286,7 @@ class VLANGroupDeleteView(generic.ObjectDeleteView):
     queryset = VLANGroup.objects.all()
 
 
-class VLANGroupBulkImportView(generic.BulkImportView):
+class VLANGroupBulkImportView(generic.BulkImportView):  # 3.0 TODO: remove, unused
     queryset = VLANGroup.objects.all()
     table = tables.VLANGroupTable
 
@@ -1270,16 +1303,15 @@ class VLANGroupBulkDeleteView(generic.BulkDeleteView):
 
 
 class VLANListView(generic.ObjectListView):
-    queryset = VLAN.objects.all()
+    queryset = VLAN.objects.annotate(location_count=count_related(Location, "vlans"))
     filterset = filters.VLANFilterSet
     filterset_form = forms.VLANFilterForm
     table = tables.VLANDetailTable
 
 
 class VLANView(generic.ObjectView):
-    queryset = VLAN.objects.select_related(
+    queryset = VLAN.objects.annotate(location_count=count_related(Location, "vlans")).select_related(
         "role",
-        "location",
         "status",
         "tenant__tenant_group",
     )
@@ -1289,7 +1321,6 @@ class VLANView(generic.ObjectView):
             Prefix.objects.restrict(request.user, "view")
             .filter(vlan=instance)
             .select_related(
-                "location",
                 "status",
                 "role",
                 # "vrf",
@@ -1299,9 +1330,7 @@ class VLANView(generic.ObjectView):
         prefix_table = tables.PrefixTable(list(prefixes))
         prefix_table.exclude = ("vlan",)
 
-        return {
-            "prefix_table": prefix_table,
-        }
+        return {"prefix_table": prefix_table, **super().get_extra_context(request, instance)}
 
 
 class VLANInterfacesView(generic.ObjectView):
@@ -1354,7 +1383,7 @@ class VLANDeleteView(generic.ObjectDeleteView):
     queryset = VLAN.objects.all()
 
 
-class VLANBulkImportView(generic.BulkImportView):
+class VLANBulkImportView(generic.BulkImportView):  # 3.0 TODO: remove, unused
     queryset = VLAN.objects.all()
     table = tables.VLANTable
 
@@ -1362,7 +1391,6 @@ class VLANBulkImportView(generic.BulkImportView):
 class VLANBulkEditView(generic.BulkEditView):
     queryset = VLAN.objects.select_related(
         "vlan_group",
-        "location",
         "status",
         "tenant",
         "role",
@@ -1371,11 +1399,16 @@ class VLANBulkEditView(generic.BulkEditView):
     table = tables.VLANTable
     form = forms.VLANBulkEditForm
 
+    def extra_post_save_action(self, obj, form):
+        if form.cleaned_data.get("add_locations", None):
+            obj.locations.add(*form.cleaned_data["add_locations"])
+        if form.cleaned_data.get("remove_locations", None):
+            obj.locations.remove(*form.cleaned_data["remove_locations"])
+
 
 class VLANBulkDeleteView(generic.BulkDeleteView):
     queryset = VLAN.objects.select_related(
         "vlan_group",
-        "location",
         "status",
         "tenant",
         "role",
@@ -1417,7 +1450,7 @@ class ServiceEditView(generic.ObjectEditView):
         return obj
 
 
-class ServiceBulkImportView(generic.BulkImportView):
+class ServiceBulkImportView(generic.BulkImportView):  # 3.0 TODO: remove, unused
     queryset = Service.objects.all()
     table = tables.ServiceTable
 
