@@ -1,4 +1,5 @@
 import datetime
+import random
 import types
 from unittest import skip, TestCase as UnitTestTestCase
 import uuid
@@ -42,6 +43,7 @@ from nautobot.dcim.models import (
     Cable,
     ConsolePort,
     ConsoleServerPort,
+    Controller,
     Device,
     DeviceType,
     FrontPort,
@@ -85,7 +87,6 @@ from nautobot.tenancy.models import Tenant
 from nautobot.users.models import ObjectPermission, Token
 from nautobot.virtualization.factory import ClusterTypeFactory
 from nautobot.virtualization.models import Cluster, VirtualMachine, VMInterface
-import secrets
 
 # Use the proper swappable User model
 User = get_user_model()
@@ -630,21 +631,9 @@ class GraphQLAPIPermissionTest(GraphQLTestCaseBase):
         self.assertEqual(names, ["Rack 1-1", "Rack 1-2", "Rack 2-1", "Rack 2-2"])
 
     def test_graphql_api_no_token(self):
-        """Validate unauthenticated users are not able to query anything by default."""
+        """Validate unauthenticated users are not able to query anything."""
         response = self.client.post(self.api_url, {"query": self.get_racks_query}, format="json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIsInstance(response.data["data"]["racks"], list)
-        names = [item["name"] for item in response.data["data"]["racks"]]
-        self.assertEqual(names, [])
-
-    @override_settings(EXEMPT_VIEW_PERMISSIONS=["*"])
-    def test_graphql_api_no_token_exempt(self):
-        """Validate unauthenticated users are able to query based on the exempt permissions."""
-        response = self.client.post(self.api_url, {"query": self.get_racks_query}, format="json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIsInstance(response.data["data"]["racks"], list)
-        names = [item["name"] for item in response.data["data"]["racks"]]
-        self.assertEqual(names, ["Rack 1-1", "Rack 1-2", "Rack 2-1", "Rack 2-2"])
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_graphql_api_wrong_token(self):
         """Validate a wrong token return 403."""
@@ -721,6 +710,7 @@ class GraphQLQueryTest(GraphQLTestCaseBase):
 
         # Remove random IPAddress and Device fixtures for this custom test
         IPAddress.objects.all().delete()
+        Controller.objects.filter(controller_device__isnull=False).delete()
         Device.objects.all().delete()
 
         # Initialize fake request that will be required to execute GraphQL query
@@ -734,7 +724,7 @@ class GraphQLQueryTest(GraphQLTestCaseBase):
         roles = Role.objects.get_for_model(Device)
         cls.device_role1 = roles[0]
         cls.device_role2 = roles[1]
-        cls.device_role3 = secrets.SystemRandom().choice(roles)  # noqa: S311  # suspicious-non-cryptographic-random-usage
+        cls.device_role3 = random.choice(roles)  # noqa: S311  # suspicious-non-cryptographic-random-usage
         cls.location_statuses = list(Status.objects.get_for_model(Location))[:2]
         cls.location_type = LocationType.objects.get(name="Campus")
         cls.location1 = Location.objects.filter(location_type=cls.location_type).first()

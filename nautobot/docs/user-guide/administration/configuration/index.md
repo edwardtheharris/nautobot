@@ -19,7 +19,7 @@ Configuration file created at '/opt/nautobot/nautobot_config.py'
 ```
 
 !!! tip
-    The [Nautobot Installation Docs](../installation/nautobot.md#choose-your-nautobot_root) example sets `NAUTOBOT_ROOT` to `/opt/nautobot`, so `nautobot_config.py` would be found at `/opt/nautobot/nautobot_config.py`.
+    The [Nautobot Installation Docs](../installation/nautobot.md#create-the-nautobot-system-user) example sets `NAUTOBOT_ROOT` to `/opt/nautobot`, so `nautobot_config.py` would be found at `/opt/nautobot/nautobot_config.py`.
 
 You may specify a different location for the configuration as the argument to `init`:
 
@@ -149,11 +149,11 @@ echo $NAUTOBOT_CONFIG
 ### Adding your own dependencies
 
 !!! warning
-    Be cautious not to confuse extra applications with Nautobot plugins which are installed using the [`PLUGINS`](optional-settings.md#plugins) setting. They are similar, but distinctly different!
+    Be cautious not to confuse extra applications with Nautobot Apps which are installed using the [`PLUGINS`](optional-settings.md#plugins) setting. They are similar, but distinctly different!
 
 Nautobot, being a Django application, allows for installation of additional dependencies utilizing the [`INSTALLED_APPS`](https://docs.djangoproject.com/en/stable/ref/settings/#std:setting-INSTALLED_APPS) settings. Due to the highly specialized nature of Nautobot, *you cannot safely do this*.
 
-For example, let's assume that you want to install the popular [`django-health-check`](https://django-health-check.readthedocs.io/en/latest/) plugin to your Nautobot deployment which requires you to add one or more `health_check` entries to your `INSTALLED_APPS`.
+For example, let's assume that you want to install the popular [`django-health-check`](https://django-health-check.readthedocs.io/en/latest/) application to your Nautobot deployment which requires you to add one or more `health_check` entries to your `INSTALLED_APPS`.
 
 If you attempt to modify `INSTALLED_APPS` yourself, you might see an error such as this:
 
@@ -187,4 +187,4 @@ EXTRA_INSTALLED_APPS = [
 
 For more information on installing extra applications, please see the documentation on [Extra Applications](optional-settings.md#extra-applications).
 
-For more information on installing or developing Nautobot plugins, please see the [documentation on Plugins](../../../apps/index.md).
+For more information on installing or developing Nautobot Apps, please see the [documentation on Apps](../../../apps/index.md).
