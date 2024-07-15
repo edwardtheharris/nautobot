@@ -283,8 +283,8 @@ This workflow uses Python and Poetry to work with your development environment l
 There are a few things you'll need:
 
 * A Linux system or environment
-* A MySQL or PostgreSQL server, which can be installed locally [per the documentation](../../user-guide/administration/installation/index.md#installing-nautobot-dependencies)
-* A Redis server, which can also be [installed locally](../../user-guide/administration/installation/index.md#installing-nautobot-dependencies)
+* A MySQL or PostgreSQL server, which can be installed locally [per the documentation](../../user-guide/administration/installation/install_system.md)
+* A Redis server, which can also be [installed locally](../../user-guide/administration/installation/install_system.md)
 * A supported version of Python
 * A recent version of [Poetry](https://python-poetry.org/docs/#installation)
 
@@ -463,7 +463,7 @@ A newly created configuration includes sane defaults. If you need to customize t
 * [`DATABASES`](../../user-guide/administration/configuration/required-settings.md#databases): Database connection parameters, if different from the defaults
 * **Redis settings**: Redis configuration requires multiple settings. The defaults should be fine for development.
 * [`DEBUG`](../../user-guide/administration/configuration/optional-settings.md#debug): Set to `True` to enable verbose exception logging and, if installed, the [Django debug toolbar](https://django-debug-toolbar.readthedocs.io/en/latest/)
-* [`EXTRA_INSTALLED_APPS`](../../user-guide/administration/configuration/optional-settings.md#extra-applications): Optionally provide a list of extra Django apps/plugins you may desire to use for development
+* [`EXTRA_INSTALLED_APPS`](../../user-guide/administration/configuration/optional-settings.md#extra-applications): Optionally provide a list of extra Django apps you may desire to use for development
 
 ## Working in your Development Environment
 
@@ -668,10 +668,9 @@ invoke unittest --cache-test-fixtures --keepdb --parallel --skip-docs-build
 invoke unittest --cache-test-fixtures --keepdb --parallel --skip-docs-build --label nautobot.core.tests
 ```
 
-When switching between significantly different branches of the code base (e.g. `main` vs `develop` vs `next`), you'll need to remove the cached test factory data, and for once omit the `--keepdb` option so that the test database can be destroyed and recreated appropriately:
+When switching between significantly different branches of the code base (e.g. `main` vs `develop` vs `next`), you'll need to for once omit the `--keepdb` option so that the test database can be destroyed and recreated appropriately:
 
 ```no-highlight
-rm development/factory_dump.json
 invoke unittest --cache-test-fixtures --parallel
 ```
 

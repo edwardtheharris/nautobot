@@ -39,7 +39,35 @@ nautobot_config.py
 nautobot.log
 nautobot.pid
 nautobot.sql
+<<<<<<< HEAD
 node_modules
 Pipfile*
 uwsgi.ini
 Vagrantfile*
+=======
+.DS_Store
+.idea
+.coverage
+.coverage.*
+.vscode
+docker-compose.override.yml
+*.env
+!dev.env
+.gnupg/
+gh.gpg
+*.egg-info
+.python-version
+db_output.*
+celerybeat-schedule
+geckodriver.log
+uwsgi.ini
+jobs/*
+htmlcov/*
+/nautobot/project-static/docs/
+/examples/example_*/**/static/example_*/docs/
+development/factory_dump*.json
+node_modules
+.dev/
+.int/
+.prod/
+>>>>>>> ada0fbfe1d209d2752a9efb984e95fdb3154f5fb

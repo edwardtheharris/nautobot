@@ -1,5 +1,4 @@
 ---
-version: "3.9"
 volumes:
   media_root:
 services:
@@ -25,12 +24,6 @@ services:
     env_file:
       - dev.env
     tty: true
-    healthcheck:
-      interval: 10s
-      timeout: 10s
-      start_period: 5m  # it takes a WHILE to run initial migrations with an empty DB
-      retries: 3
-      test: "nautobot-server health_check"
   celery_worker:
     image: "local/nautobot-dev:local-py${PYTHON_VER}"
     ports:
@@ -84,7 +77,7 @@ services:
     env_file:
       - ./dev.env
   selenium:
-    image: selenium/standalone-firefox:4.9.1
+    image: selenium/standalone-firefox:4.19
     ports:
         - "4444:4444"
         - "15900:5900"
