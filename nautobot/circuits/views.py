@@ -22,11 +22,12 @@ class CircuitTypeUIViewSet(
     view_mixins.ObjectEditViewMixin,
     view_mixins.ObjectDestroyViewMixin,
     view_mixins.ObjectBulkDestroyViewMixin,
-    view_mixins.ObjectBulkCreateViewMixin,
+    view_mixins.ObjectBulkCreateViewMixin,  # 3.0 TODO: remove this mixin as it's no longer used
     view_mixins.ObjectChangeLogViewMixin,
     view_mixins.ObjectNotesViewMixin,
 ):
     filterset_class = filters.CircuitTypeFilterSet
+    filterset_form_class = forms.CircuitTypeFilterForm
     form_class = forms.CircuitTypeForm
     queryset = CircuitType.objects.annotate(circuit_count=count_related(Circuit, "circuit_type"))
     serializer_class = serializers.CircuitTypeSerializer
@@ -61,12 +62,13 @@ class CircuitTerminationUIViewSet(
     view_mixins.ObjectEditViewMixin,
     view_mixins.ObjectDestroyViewMixin,
     view_mixins.ObjectBulkDestroyViewMixin,
-    view_mixins.ObjectBulkCreateViewMixin,
+    view_mixins.ObjectBulkCreateViewMixin,  # 3.0 TODO: remove this mixin as it's no longer used
     view_mixins.ObjectChangeLogViewMixin,
     view_mixins.ObjectNotesViewMixin,
 ):
     action_buttons = ("import", "export")
     filterset_class = filters.CircuitTerminationFilterSet
+    filterset_form_class = forms.CircuitTerminationFilterForm
     form_class = forms.CircuitTerminationForm
     queryset = CircuitTermination.objects.all()
     serializer_class = serializers.CircuitTerminationSerializer
