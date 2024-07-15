@@ -1,8 +1,10 @@
+import urllib.parse
+
 from django.db import ProgrammingError
 from django.test import TestCase
 
 from nautobot.core.models.querysets import count_related
-from nautobot.core.views.utils import check_filter_for_display
+from nautobot.core.views.utils import check_filter_for_display, prepare_cloned_fields
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device, DeviceRedundancyGroup, DeviceType, InventoryItem, Location, Manufacturer
 from nautobot.extras.models import Role, Status
@@ -76,7 +78,7 @@ class CheckFilterForDisplayTest(TestCase):
                 expected_output,
             )
 
-        # TODO(glenn): We need some filters that *aren't* getting updated to the new pattern - maybe in example_plugin?
+        # TODO(glenn): We need some filters that *aren't* getting updated to the new pattern - maybe in example_app?
         # with self.subTest("Test get value display (also legacy filter ModelMultipleChoiceFilter)"):
         #     example_obj = DeviceType.objects.first()
         #     expected_output = {
@@ -147,3 +149,22 @@ class CheckCountRelatedSubquery(TestCase):
             manufacturer_count=count_related(Manufacturer, "inventory_items__device", distinct=True)
         )
         self.assertEqual(qs.get(pk=device1.pk).manufacturer_count, 3)
+
+
+class CheckPrepareClonedFields(TestCase):
+    name = "Building-02"
+    descriptions = ["Complicated Name & Stuff", "Simple Name"]
+
+    def testQueryParameterGeneration(self):
+        """Assert that a clone field with a special character, &, is properly escaped"""
+        instance = Location.objects.get(name=self.name)
+        self.assertIsInstance(instance, Location)
+        for description in self.descriptions:
+            with self.subTest(f"Testing parameter generation for a model with the name '{description}'"):
+                instance.description = description
+                query_params = urllib.parse.parse_qs(prepare_cloned_fields(instance))
+                self.assertTrue(isinstance(query_params, dict))
+                self.assertTrue("description" in query_params.keys())
+                self.assertTrue(isinstance(query_params["description"], list))
+                self.assertTrue(len(query_params["description"]) == 1)
+                self.assertTrue(query_params["description"][0] == description)

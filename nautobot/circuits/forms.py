@@ -1,5 +1,6 @@
 from django import forms
 
+from nautobot.core.constants import CHARFIELD_MAX_LENGTH
 from nautobot.core.forms import (
     CommentField,
     DatePicker,
@@ -61,7 +62,7 @@ class ProviderForm(NautobotModelForm):
 class ProviderBulkEditForm(TagsBulkEditFormMixin, NautobotBulkEditForm):
     pk = forms.ModelMultipleChoiceField(queryset=Provider.objects.all(), widget=forms.MultipleHiddenInput)
     asn = forms.IntegerField(required=False, label="ASN")
-    account = forms.CharField(max_length=100, required=False, label="Account number")
+    account = forms.CharField(max_length=CHARFIELD_MAX_LENGTH, required=False, label="Account number")
     portal_url = forms.URLField(required=False, label="Portal")
     noc_contact = forms.CharField(required=False, widget=SmallTextarea, label="NOC contact")
     admin_contact = forms.CharField(required=False, widget=SmallTextarea, label="Admin contact")
@@ -110,7 +111,7 @@ class ProviderNetworkForm(NautobotModelForm):
 class ProviderNetworkBulkEditForm(TagsBulkEditFormMixin, NautobotBulkEditForm):
     pk = forms.ModelMultipleChoiceField(queryset=ProviderNetwork.objects.all(), widget=forms.MultipleHiddenInput)
     provider = DynamicModelChoiceField(queryset=Provider.objects.all(), required=False)
-    description = forms.CharField(max_length=100, required=False)
+    description = forms.CharField(max_length=CHARFIELD_MAX_LENGTH, required=False)
     comments = CommentField(widget=SmallTextarea, label="Comments")
 
     class Meta:
@@ -142,6 +143,12 @@ class CircuitTypeForm(NautobotModelForm):
             "name",
             "description",
         ]
+
+
+class CircuitTypeFilterForm(NautobotFilterForm):
+    model = CircuitType
+    q = forms.CharField(required=False, label="Search")
+    name = forms.CharField(required=False)
 
 
 #
@@ -184,7 +191,7 @@ class CircuitBulkEditForm(TagsBulkEditFormMixin, StatusModelBulkEditFormMixin, N
     provider = DynamicModelChoiceField(queryset=Provider.objects.all(), required=False)
     tenant = DynamicModelChoiceField(queryset=Tenant.objects.all(), required=False)
     commit_rate = forms.IntegerField(required=False, label="Commit rate (Kbps)")
-    description = forms.CharField(max_length=100, required=False)
+    description = forms.CharField(max_length=CHARFIELD_MAX_LENGTH, required=False)
     comments = CommentField(widget=SmallTextarea, label="Comments")
 
     class Meta:
@@ -261,3 +268,12 @@ class CircuitTerminationForm(LocatableModelFormMixin, NautobotModelForm):
         widgets = {
             "term_side": forms.HiddenInput(),
         }
+
+
+class CircuitTerminationFilterForm(LocatableModelFilterFormMixin, NautobotFilterForm):
+    model = CircuitTermination
+    q = forms.CharField(required=False, label="Search")
+    circuit = DynamicModelMultipleChoiceField(queryset=Circuit.objects.all(), to_field_name="cid", required=False)
+    provider_network = DynamicModelMultipleChoiceField(
+        queryset=ProviderNetwork.objects.all(), to_field_name="name", required=False
+    )

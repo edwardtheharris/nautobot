@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from django import template
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -125,7 +127,7 @@ def _render_job_button_for_obj(job_button, obj, context, content_type):
         "object": obj,
         "job": job_button.job,
         "hidden_inputs": hidden_inputs,
-        "disabled": "" if has_run_perm else "disabled",
+        "disabled": "" if (has_run_perm and job_button.job.installed and job_button.job.enabled) else "disabled",
     }
 
     if job_button.confirmation:
@@ -147,12 +149,12 @@ def job_buttons(context, obj):
     """
     content_type = ContentType.objects.get_for_model(obj)
     # We will enforce "run" permission later in deciding which buttons to show as disabled.
-    buttons = JobButton.objects.filter(content_types=content_type)
+    buttons = JobButton.objects.filter(content_types=content_type, enabled=True)
     if not buttons:
         return SAFE_EMPTY_STR
 
     buttons_html = forms_html = SAFE_EMPTY_STR
-    group_names = {}
+    group_names = OrderedDict()
 
     for jb in buttons:
         # Organize job buttons by group for later processing

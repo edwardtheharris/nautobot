@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from django import template
 from django.contrib.contenttypes.models import ContentType
 from django.utils.html import format_html
@@ -39,7 +41,7 @@ def custom_links(context, obj):
         "perms": context["perms"],  # django.contrib.auth.context_processors.auth
     }
     template_code = mark_safe("")  # noqa: S308  # suspicious-mark-safe-usage -- this one is safe
-    group_names = {}
+    group_names = OrderedDict()
 
     for cl in links:
         # Organize custom links by group

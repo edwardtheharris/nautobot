@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 from decimal import Decimal
 import uuid
 
@@ -15,7 +15,7 @@ def deepmerge(original, new):
     """
     Deep merge two dictionaries (new into original) and return a new dict
     """
-    merged = {original}
+    merged = OrderedDict(original)
     for key, val in new.items():
         if key in original and isinstance(original[key], dict) and isinstance(val, dict):
             merged[key] = deepmerge(original[key], val)
@@ -51,8 +51,7 @@ def flatten_iterable(iterable):
     """
     for i in iterable:
         if hasattr(i, "__iter__") and not isinstance(i, str):
-            for j in flatten_iterable(i):
-                yield j
+            yield from flatten_iterable(i)
         else:
             yield i
 

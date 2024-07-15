@@ -20,6 +20,8 @@ nautobot.sql
 docker-compose.override.yml
 *.env
 !dev.env
+.gnupg/
+gh.gpg
 *.egg-info
 .python-version
 db_output.*
@@ -29,8 +31,8 @@ uwsgi.ini
 jobs/*
 htmlcov/*
 /nautobot/project-static/docs/
-/examples/example_plugin/example_plugin/static/example_plugin/docs/
-development/factory_dump.json
+/examples/example_*/**/static/example_*/docs/
+development/factory_dump*.json
 node_modules
 .dev/
 .int/
