@@ -1,5 +1,4 @@
 import datetime
-import random
 
 from django.contrib.contenttypes.models import ContentType
 from django.test import override_settings
@@ -38,6 +37,7 @@ from nautobot.ipam.models import (
 from nautobot.tenancy.models import Tenant
 from nautobot.users.models import ObjectPermission
 from nautobot.virtualization.models import Cluster, ClusterType, VirtualMachine
+import secrets
 
 
 class NamespaceTestCase(
@@ -591,7 +591,7 @@ class IPAddressMergeTestCase(ModelViewTestCase):
                 ],
             },
         )
-        cls.dup_ip_1.tags.set(random.choices(Tag.objects.get_for_model(IPAddress), k=3))  # noqa: S311  # suspicious-non-cryptographic-random-usage -- ok here in test code
+        cls.dup_ip_1.tags.set(secrets.SystemRandom().choices(Tag.objects.get_for_model(IPAddress), k=3))  # noqa: S311  # suspicious-non-cryptographic-random-usage -- ok here in test code
         parent_2, _ = Prefix.objects.get_or_create(
             prefix="94.0.0.2/12",
             defaults={"namespace": cls.namespace_2, "status": prefix_status, "type": "network"},
@@ -615,7 +615,7 @@ class IPAddressMergeTestCase(ModelViewTestCase):
                 ],
             },
         )
-        cls.dup_ip_2.tags.set(random.choices(Tag.objects.get_for_model(IPAddress), k=2))  # noqa: S311  # suspicious-non-cryptographic-random-usage -- ok here in test code
+        cls.dup_ip_2.tags.set(secrets.SystemRandom().choices(Tag.objects.get_for_model(IPAddress), k=2))  # noqa: S311  # suspicious-non-cryptographic-random-usage -- ok here in test code
         parent_3, _ = Prefix.objects.get_or_create(
             prefix="94.0.0.2/15",
             defaults={"namespace": namespace_3, "status": prefix_status, "type": "network"},
@@ -639,7 +639,7 @@ class IPAddressMergeTestCase(ModelViewTestCase):
                 ],
             },
         )
-        cls.dup_ip_3.tags.set(random.choices(Tag.objects.get_for_model(IPAddress), k=3))  # noqa: S311  # suspicious-non-cryptographic-random-usage -- ok here in test code
+        cls.dup_ip_3.tags.set(secrets.SystemRandom().choices(Tag.objects.get_for_model(IPAddress), k=3))  # noqa: S311  # suspicious-non-cryptographic-random-usage -- ok here in test code
         cls.merge_data = {
             "pk": [cls.dup_ip_1.pk, cls.dup_ip_2.pk, cls.dup_ip_3.pk],
             "host": cls.dup_ip_1.host,

@@ -1,4 +1,3 @@
-import random
 import time
 from unittest.mock import patch
 
@@ -44,6 +43,7 @@ from nautobot.extras.models import (
 )
 from nautobot.ipam.models import Prefix
 from nautobot.tenancy.models import Tenant
+import secrets
 
 
 class DynamicGroupTestBase(TestCase):
@@ -812,7 +812,7 @@ class DynamicGroupModelTest(DynamicGroupTestBase):  # TODO: BaseModelTestCase mi
 
         # Assert that ordering is always deterministic by shuffling the list of pks and asserting
         # that the ordered pk matches that shuffled order.
-        random.shuffle(pk_list)
+        secrets.SystemRandom().shuffle(pk_list)
         ordered_qs = self.parent.ordered_queryset_from_pks(pk_list)
         self.assertEqual(
             pk_list,
