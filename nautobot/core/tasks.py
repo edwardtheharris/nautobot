@@ -7,6 +7,7 @@ import requests
 
 from nautobot.core import celery
 from nautobot.core.utils import config
+from security import safe_requests
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -27,7 +28,7 @@ def get_releases(pre_releases=False):
 
     try:
         logger.debug(f"Fetching new releases from {url}")
-        response = requests.get(url, headers=headers, proxies=settings.HTTP_PROXIES, timeout=15)
+        response = safe_requests.get(url, headers=headers, proxies=settings.HTTP_PROXIES, timeout=15)
         response.raise_for_status()
         total_releases = len(response.json())
 
