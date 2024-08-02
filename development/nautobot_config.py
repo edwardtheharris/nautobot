@@ -8,6 +8,7 @@ from nautobot.core.settings import *  # noqa: F403  # undefined-local-with-impor
 # "may be undefined, or defined from star imports",
 # which we suppress on a case-by-case basis below
 from nautobot.core.settings_funcs import is_truthy
+from security import safe_requests
 
 SECRET_KEY = os.getenv("NAUTOBOT_SECRET_KEY", "012345678901234567890123456789012345678901234567890123456789")
 
@@ -57,7 +58,6 @@ SESSION_COOKIE_SAMESITE = None
 
 # OIDC Dev ENV
 if is_truthy(os.getenv("ENABLE_OIDC", "False")):
-    import requests
 
     AUTHENTICATION_BACKENDS = (
         "social_core.backends.keycloak.KeycloakOAuth2",
@@ -65,7 +65,7 @@ if is_truthy(os.getenv("ENABLE_OIDC", "False")):
     )
     SOCIAL_AUTH_KEYCLOAK_KEY = "nautobot"
     SOCIAL_AUTH_KEYCLOAK_SECRET = "7b1c3527-8702-4742-af69-2b74ee5742e8"  # noqa: S105  # hardcoded-password-string
-    SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY = requests.get("http://keycloak:8087/realms/nautobot/", timeout=15).json()[
+    SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY = safe_requests.get("http://keycloak:8087/realms/nautobot/", timeout=15).json()[
         "public_key"
     ]
     SOCIAL_AUTH_KEYCLOAK_AUTHORIZATION_URL = "http://localhost:8087/realms/nautobot/protocol/openid-connect/auth"
