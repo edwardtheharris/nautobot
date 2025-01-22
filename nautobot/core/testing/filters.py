@@ -1,4 +1,3 @@
-import random
 import string
 
 from django.contrib.contenttypes.models import ContentType
@@ -17,6 +16,7 @@ from nautobot.core.filters import (
 from nautobot.core.models.generics import PrimaryModel
 from nautobot.core.testing import views
 from nautobot.tenancy import models
+import secrets
 
 
 @tag("unit")
@@ -49,7 +49,7 @@ class FilterTestCases:
             values_with_count = queryset.values(field_name).annotate(count=Count(field_name)).order_by("count")
             for value in values_with_count:
                 # randomly break out of loop after 2 values have been selected
-                if len(test_values) > 1 and random.choice([True, False]):  # noqa: S311  # suspicious-non-cryptographic-random-usage
+                if len(test_values) > 1 and secrets.choice([True, False]):  # noqa: S311  # suspicious-non-cryptographic-random-usage
                     break
                 if value[field_name] and value["count"] < qs_count:
                     qs_count -= value["count"]
@@ -223,7 +223,7 @@ class FilterTestCases:
             self._assert_valid_filter_predicates(obj, obj_field_name)
 
             # Create random 5 char string to append to attribute, used for icontains partial lookup
-            lookup = "".join(random.choices(string.ascii_lowercase, k=5))  # noqa: S311 # pseudo-random generator
+            lookup = "".join(secrets.SystemRandom().choices(string.ascii_lowercase, k=5))  # noqa: S311 # pseudo-random generator
             obj_field_value = getattr(obj, obj_field_name)
 
             if isinstance(obj_field_value, str):
