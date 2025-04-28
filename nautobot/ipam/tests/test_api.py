@@ -1,6 +1,5 @@
 from concurrent.futures.thread import ThreadPoolExecutor
 import json
-from random import shuffle
 from unittest import skip
 
 from django.contrib.contenttypes.models import ContentType
@@ -33,6 +32,7 @@ from nautobot.ipam.models import (
     VRFPrefixAssignment,
 )
 from nautobot.virtualization.models import Cluster, ClusterType, VirtualMachine, VMInterface
+import secrets
 
 
 class AppTest(APITestCase):
@@ -701,7 +701,7 @@ class ParallelPrefixTest(APITransactionTestCase):
     def _do_parallel_requests(self, url, requests):
         # Randomize request order, such that test run more closely simulates
         # a real calling pattern.
-        shuffle(requests)
+        secrets.SystemRandom().shuffle(requests)
         with ThreadPoolExecutor(max_workers=len(requests)) as executor:
             futures = []
             for req in requests:

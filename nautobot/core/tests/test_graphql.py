@@ -1,5 +1,4 @@
 import datetime
-import random
 import types
 from unittest import skip, TestCase as UnitTestTestCase
 import uuid
@@ -87,6 +86,7 @@ from nautobot.tenancy.models import Tenant
 from nautobot.users.models import ObjectPermission, Token
 from nautobot.virtualization.factory import ClusterTypeFactory
 from nautobot.virtualization.models import Cluster, VirtualMachine, VMInterface
+import secrets
 
 # Use the proper swappable User model
 User = get_user_model()
@@ -724,7 +724,7 @@ class GraphQLQueryTest(GraphQLTestCaseBase):
         roles = Role.objects.get_for_model(Device)
         cls.device_role1 = roles[0]
         cls.device_role2 = roles[1]
-        cls.device_role3 = random.choice(roles)  # noqa: S311  # suspicious-non-cryptographic-random-usage
+        cls.device_role3 = secrets.choice(roles)  # noqa: S311  # suspicious-non-cryptographic-random-usage
         cls.location_statuses = list(Status.objects.get_for_model(Location))[:2]
         cls.location_type = LocationType.objects.get(name="Campus")
         cls.location1 = Location.objects.filter(location_type=cls.location_type).first()
